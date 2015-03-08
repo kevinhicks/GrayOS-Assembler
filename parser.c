@@ -10,22 +10,9 @@
 #include "string.h"
 #include "ctype.h"
 #include "utils.h"
-
-char prefetchChar(FILE* file) {
-
-	char c = getc(file);
-	if (c != EOF) {
-		ungetc(c, file);
-	}
-
-	return c;
-}
+#include "constants.h"
 
 char* readWord(FILE* file, char* buffer) {
-
-	//char buff[1];
-	//fscanf(file, "%c", buff);
-
 	int index = 0;
 
 	//A 'word' must start with a letter
@@ -33,13 +20,12 @@ char* readWord(FILE* file, char* buffer) {
 		error("Expected Letter");
 	}
 
-	while ((isalpha(chrLookAhead)  || chrLookAhead == '_') && chrLookAhead != EOF) {
+	while ((isalpha(chrLookAhead) || chrLookAhead == '_') && chrLookAhead != EOF) {
 		buffer[index++] = chrLookAhead;
 		readChar(file);
 	}
 
 	buffer[index++] = '\0';
-	//printf(buffer);
 
 	skipWhitespace(file);
 
@@ -56,6 +42,12 @@ void expect(char expected) {
 
 char readChar(FILE* file) {
 	chrLookAhead = getc(file);
+
+	if (insideQuotes == FALSE) {
+		if (chrLookAhead == ';') {
+			skipLine(file);
+		}
+	}
 	return chrLookAhead;
 }
 
@@ -67,11 +59,31 @@ void skipLine(FILE* file) {
 	skipWhitespace(file);
 }
 
+char* readNumber(FILE* file, char* buffer) {
+	int index = 0;
+
+	//A 'number' must start with a letter
+	if (!isdigit(chrLookAhead) && chrLookAhead != EOF) {
+		error("Expected Digit");
+	}
+
+	while (isdigit(chrLookAhead) && chrLookAhead != EOF) {
+		buffer[index++] = chrLookAhead;
+		readChar(file);
+	}
+
+	buffer[index++] = '\0';
+
+	skipWhitespace(file);
+
+	return buffer;
+}
+
 char* readLine(FILE* file, char* buffer) {
 	int index = 0;
 
 	while (chrLookAhead != EOF && chrLookAhead != '\n') {
-		if(chrLookAhead == ';') {
+		if (chrLookAhead == ';') {
 			skipLine(file);
 			break;
 		}
@@ -89,6 +101,13 @@ char* readLine(FILE* file, char* buffer) {
 }
 
 void skipWhitespace(FILE* file) {
+	while ((chrLookAhead == ' ' || chrLookAhead == '\t')
+			&& (chrLookAhead != EOF)) {
+		readChar(file);
+	}
+}
+
+void skipWhitespaceLines(FILE* file) {
 	while ((chrLookAhead == ' ' || chrLookAhead == '\t' || chrLookAhead == '\n')
 			&& (chrLookAhead != EOF)) {
 		readChar(file);

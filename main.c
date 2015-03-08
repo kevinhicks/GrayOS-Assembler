@@ -32,50 +32,36 @@ void assemble(char* fileName) {
 	printf("Assembling: %s\n", fileName);
 
 	FILE* file;
-	INSTRUCTION ins;
+
+	insideQuotes = FALSE;
+
 
 	file = fopen(fileName, "r");
 
 	//prime the pump
 	readChar(file);
-	skipWhitespace(file);
-
-	char buffer[MAX_WORD_SIZE];
+	skipWhitespaceLines(file);
 
 	while (chrLookAhead != EOF) {
 		if (chrLookAhead == ';') {
-			printf("Comment Found\n");
+			//Comment
 			skipLine(file);
 		} else if (chrLookAhead == ',') {
+			//TODO Handle multiple parameters
 			readChar(file);
 			skipWhitespace(file);
 		} else if (chrLookAhead == '#') {
+			//Directive
 			doDirective(file);
-			continue;
 		} else {
+			//Instruction
 			doInstruction(file);
 		}
+
+		skipWhitespaceLines(file);
 	}
-
-	/*{
-
-	 if (chrLookAhead == '[') {
-
-	 } else {
-	 char word[MAX_WORD_SIZE];
-	 readWord(file, word);
-
-	 int instruction = findInstruction(word);
-
-	 //this is a instruction
-	 if (instruction != OP_NOT_FOUND) {
-
-	 printf("Look ahead after finding ins '%c'\n", chrLookAhead);
-
-	 }
-	 }
-	 }
-	 */
 	fclose(file);
+
+	printf("Assemble Complete\n");
 }
 

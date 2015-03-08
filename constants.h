@@ -18,6 +18,7 @@
 
 #define OPCODE_TABLE_SIZE 	300
 
-#define NULL 0
+#define TRUE 1
+#define FALSE 0
 
 #endif /* CONSTANTS_H_ */

@@ -12,6 +12,7 @@
 #include "constants.h"
 
 char chrLookAhead;
+int insideQuotes;
 
 typedef struct {
 	FILE* file;
@@ -25,9 +26,10 @@ char* readWord(FILE* file, char* buffer);
 char* readIdent(FILE* file, char* buffer);
 char readChar(FILE* file);
 char* readLine(FILE* file, char* buffer);
-
+char* readNumber(FILE* file, char* buffer);
 
 void skipWhitespace(FILE* file);
+void skipWhitespaceLines(FILE* file);
 void skipLine(FILE* file);
 
 char prefetchChar(FILE* file);

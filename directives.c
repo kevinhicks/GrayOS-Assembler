@@ -26,8 +26,6 @@ void doDirective(FILE* file) {
 
 	strToUpper(buffer);
 
-	printf("Directive: ");
-
 	if (strcmp(buffer, "DEFINE") == 0) {
 		char defineName[MAX_DEFINE_NAME_SIZE];
 		char defineValue[MAX_DEFINE_VALUE_SIZE];
@@ -36,9 +34,9 @@ void doDirective(FILE* file) {
 		readLine(file, defineValue);
 
 
-		printf("DEFINE\n\tNAME: %s\n\tVALUE: %s\n", defineName, defineValue);
+		//printf("DEFINE\n\tNAME: %s\n\tVALUE: %s\n", defineName, defineValue);
 	} else {
-		printf("UNKNOWN!");
+		//printf("UNKNOWN!");
 		skipLine(file);
 	}
 	index++;

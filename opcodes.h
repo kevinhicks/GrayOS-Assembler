@@ -28,11 +28,9 @@
 #define OP_IMM16	0x400
 #define OP_IMM32 	0x800
 
-typedef struct {
-
-	char ins[MAX_TOKEN_SIZE];
-	char operands[MAX_OPERANDS_COUNT][MAX_TOKEN_SIZE];
-} INSTRUCTION;
+#define OP_SIZE_8	8
+#define OP_SIZE_16	16
+#define OP_SIZE_32	32
 
 int findInstruction(char* word);
 int* findInstructionByOperands(int ins,int op1, int op2, int op3);

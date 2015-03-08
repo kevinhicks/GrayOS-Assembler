@@ -15,9 +15,11 @@
 //Opcode
 //operand 1
 //operand 2
-int opcodes[OPCODE_TABLE_SIZE][6] = { { INS_ADD, 0x00, OP_REG8, OP_REG8 }, {
-		INS_ADD, 0x00, OP_MEM8, OP_REG8 }, { INS_ADD, 0x02, OP_REG8, OP_REG8 },
-		{ INS_ADD, 0x02, OP_REG8, OP_MEM8 } };
+int opcodes[OPCODE_TABLE_SIZE][6] = {
+		{ INS_ADD, 0x00, OP_REG8, OP_REG8, 0 },
+		{ INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 },
+		{ INS_ADD, 0x02, OP_REG8, OP_REG8, 0 },
+		{ INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 } };
 
 char instructions[300][10] = { "AAA", "ADD", "\0" };
 
@@ -35,13 +37,11 @@ int findInstruction(char* word) {
 	for (insIndex = 0; insIndex < 300; insIndex++) {
 		//If we find it, then return the index
 		if (strcmp(instructions[insIndex], cpyOfWord) == 0) {
-			printf("Instruction Found: %s %d\n", word, insIndex);
 			return insIndex;
 		}
 	}
-	//If we never find the instruction, then return OP_NOT_FOUND
 
-	printf("Instruction Not Found: %s\n", word);
+	//If we never find the instruction, then return OP_NOT_FOUND
 	return OP_NOT_FOUND;
 }
 
