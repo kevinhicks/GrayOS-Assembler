@@ -32,14 +32,16 @@ void assemble(char* fileName) {
 	printf("Assembling: %s\n", fileName);
 
 	FILE* file;
+	FILECONTEXT fileContext;
 
 	insideQuotes = FALSE;
 
 
 	file = fopen(fileName, "r");
+	fileContext.file = file;
 
 	//prime the pump
-	readChar(file);
+	readChar2(&fileContext);
 	skipWhitespaceLines(file);
 
 	while (chrLookAhead != EOF) {

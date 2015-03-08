@@ -9,6 +9,7 @@
 #define OPCODES_H_
 
 #include "constants.h"
+#include "instructions.h"
 
 #define INS_NOT_FOUND	0
 #define INS_AAA 		100
@@ -33,6 +34,7 @@
 #define OP_SIZE_32	32
 
 int findInstruction(char* word);
-int* findInstructionByOperands(int ins,int op1, int op2, int op3);
+int* findInstructionByOperands(INSTRUCTION ins);
 
+int areCompatiableTypes(int availableOperand, int providedOperand);
 #endif /* OPCODES_H_ */

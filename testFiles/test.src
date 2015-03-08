@@ -7,6 +7,6 @@ add al, al
 add al,al
 add al , al
 add al ,al
-add
+add 1,1
 add al, [100]
 add [100], al

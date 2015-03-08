@@ -20,11 +20,12 @@ typedef struct {
 	int charNumber;
 	char tokenBuffer[MAX_TOKEN_SIZE];
 	char lineBuffer[MAX_LINE_BUFFER];
-} AssemblerFile;
+} FILECONTEXT;
 
 char* readWord(FILE* file, char* buffer);
 char* readIdent(FILE* file, char* buffer);
 char readChar(FILE* file);
+char readChar2(FILECONTEXT* file);
 char* readLine(FILE* file, char* buffer);
 char* readNumber(FILE* file, char* buffer);
 

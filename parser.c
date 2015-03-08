@@ -51,6 +51,17 @@ char readChar(FILE* file) {
 	return chrLookAhead;
 }
 
+char readChar2(FILECONTEXT* context) {
+	chrLookAhead = getc(context->file);
+
+	if (insideQuotes == FALSE) {
+		if (chrLookAhead == ';') {
+			skipLine(context);
+		}
+	}
+	return chrLookAhead;
+}
+
 void skipLine(FILE* file) {
 	while (chrLookAhead != EOF && chrLookAhead != '\n') {
 		readChar(file);

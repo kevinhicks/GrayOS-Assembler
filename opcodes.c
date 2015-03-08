@@ -10,16 +10,15 @@
 #include "utils.h"
 #include "opcodes.h"
 #include "constants.h"
+#include "instructions.h"
 
 //instruction id
 //Opcode
 //operand 1
 //operand 2
-int opcodes[OPCODE_TABLE_SIZE][6] = {
-		{ INS_ADD, 0x00, OP_REG8, OP_REG8, 0 },
-		{ INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 },
-		{ INS_ADD, 0x02, OP_REG8, OP_REG8, 0 },
-		{ INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 } };
+int opcodes[OPCODE_TABLE_SIZE][6] = { { INS_ADD, 0x00, OP_REG8, OP_REG8, 0 }, {
+		INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 }, { INS_ADD, 0x02, OP_REG8, OP_REG8,
+		0 }, { INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 }, { INS_ADD, 0x04, OP_IMM16, OP_IMM16, 0 } };
 
 char instructions[300][10] = { "AAA", "ADD", "\0" };
 
@@ -46,7 +45,7 @@ int findInstruction(char* word) {
 }
 
 //Find the correct version of an instruction by its parameters
-int* findInstructionByOperands(int ins, int op1, int op2, int op3) {
+int* findInstructionByOperands(INSTRUCTION ins) {
 
 	int index = 0;
 
@@ -55,11 +54,45 @@ int* findInstructionByOperands(int ins, int op1, int op2, int op3) {
 		int* entry = opcodes[index];
 
 		//If this entry is not for our instructions, then move on
-		if (!entry[0] == ins)
+		if (!entry[0] == ins.ins)
 			continue;
+
+		//compare params
+		int param = 0;
+		for (param = 0; param < 3; param++) {
+			if (entry[param + 2] == 0) {
+				continue;
+			}
+
+			if (areCompatiableTypes(entry[param + 2], ins.op[param].opType) == TRUE) {
+				printf("FOUND A WINNER!\n");
+			}
+		}
 
 	}
 
 	//Did not find any workable entry
 	return (int*) INS_NOT_FOUND;
+}
+
+int areCompatiableTypes(int availableOperand, int providedOperand) {
+	if (availableOperand == OP_IMM8) {
+		if (providedOperand == OP_IMM8) {
+			return TRUE;
+		}
+	}
+
+	if (availableOperand == OP_IMM16) {
+		if (providedOperand == OP_IMM8 || providedOperand == OP_IMM16) {
+			return TRUE;
+		}
+	}
+
+	if (availableOperand == OP_IMM32) {
+		if (providedOperand == OP_IMM8 || providedOperand == OP_IMM16|| providedOperand == OP_IMM32) {
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
