@@ -11,33 +11,35 @@
 #include "utils.h"
 #include "parser.h"
 #include "directives.h"
+#include "utils.h"
 
 char directives[200][10] = { "INCLUDE", "DEFINE", "IFDEF", "ENDIF", "BASE",
 		"BITS", "\0" };
 
-void doDirective(FILE* file) {
+void doDirective(FILECONTEXT* context) {
 	int index = 0;
 
-	readChar(file); //Eat the '#'
+	readChar(context); //Eat the '#'
 
-	char buffer[MAX_TOKEN_SIZE];
+	readIdent(context);
 
-	readWord(file, buffer);
+	//Create a copy of the directive, we will modify it before comparison later
+	char copyOfToken[MAX_TOKEN_SIZE];
+	strcpy(copyOfToken, context->tokenBuffer);
+	strToUpper(copyOfToken);
 
-	strToUpper(buffer);
-
-	if (strcmp(buffer, "DEFINE") == 0) {
+	if (strcmp(copyOfToken, "DEFINE") == 0) {
 		char defineName[MAX_DEFINE_NAME_SIZE];
 		char defineValue[MAX_DEFINE_VALUE_SIZE];
 
-		readIdent(file, defineName);
-		readLine(file, defineValue);
+		readIdent(context);
+		strcpy(defineName, context->tokenBuffer);
 
+		readLine(context);
+		strcpy(defineName, context->tokenBuffer);
 
-		//printf("DEFINE\n\tNAME: %s\n\tVALUE: %s\n", defineName, defineValue);
 	} else {
-		//printf("UNKNOWN!");
-		skipLine(file);
+		skipLine(context);
 	}
 	index++;
 

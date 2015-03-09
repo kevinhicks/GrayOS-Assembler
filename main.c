@@ -18,9 +18,6 @@
 void assemble(char* fileName);
 
 int main() {
-
-	printf("Assembler\n");
-
 	char* fileName = "testFiles\\test.src";
 	assemble(fileName);
 
@@ -31,38 +28,35 @@ void assemble(char* fileName) {
 
 	printf("Assembling: %s\n", fileName);
 
-	FILE* file;
 	FILECONTEXT fileContext;
 
-	insideQuotes = FALSE;
-
-
-	file = fopen(fileName, "r");
-	fileContext.file = file;
+	fileContext.file = fopen(fileName, "r");
+	fileContext.lineNumber = 1;
+	fileContext.charNumber = 1;
 
 	//prime the pump
-	readChar2(&fileContext);
-	skipWhitespaceLines(file);
+	readChar(&fileContext);
+	skipWhitespaceLines(&fileContext);
 
-	while (chrLookAhead != EOF) {
-		if (chrLookAhead == ';') {
+	while (fileContext.lookAhead != EOF) {
+		if (fileContext.lookAhead == ';') {
 			//Comment
-			skipLine(file);
-		} else if (chrLookAhead == ',') {
+			skipLine(&fileContext);
+		} else if (fileContext.lookAhead == ',') {
 			//TODO Handle multiple parameters
-			readChar(file);
-			skipWhitespace(file);
-		} else if (chrLookAhead == '#') {
+			readChar(&fileContext);
+			skipWhitespace(&fileContext);
+		} else if (fileContext.lookAhead == '#') {
 			//Directive
-			doDirective(file);
+			doDirective(&fileContext);
 		} else {
 			//Instruction
-			doInstruction(file);
+			doInstruction(&fileContext);
 		}
 
-		skipWhitespaceLines(file);
+		skipWhitespaceLines(&fileContext);
 	}
-	fclose(file);
+	fclose(fileContext.file);
 
 	printf("Assemble Complete\n");
 }

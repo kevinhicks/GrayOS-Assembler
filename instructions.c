@@ -14,6 +14,10 @@
 #include "instructions.h"
 #include "opcodes.h"
 
+#include "string.h"
+
+#include "stdlib.h"
+
 PARAMETER classifyNumber(char* buffer) {
 	PARAMETER param;
 
@@ -39,22 +43,20 @@ PARAMETER classifyNumber(char* buffer) {
 
 INSTRUCTION instruction;
 
-void doInstruction(FILE* file) {
+void doInstruction(FILECONTEXT* context) {
 
-	char buffer[MAX_TOKEN_SIZE];
+	readIdent(context);
 
-	readIdent(file, buffer);
-
-	int ins = findInstruction(buffer);
+	int ins = findInstruction(context->tokenBuffer);
 
 	printf("Instruction: ");
 	if (ins == OP_NOT_FOUND) {
-		printf("UNKNOWN %s\n", buffer);
-		skipLine(file);
+		printf("UNKNOWN %s\n", context->tokenBuffer);
+		skipLine(context);
 		return;
 	}
 
-	printf("%s\n", buffer);
+	printf("%s\n", context->tokenBuffer);
 
 	instruction.ins = ins;
 
@@ -63,44 +65,49 @@ void doInstruction(FILE* file) {
 	//parse up to 3 params
 	for (param = 0; param < 3; param++) {
 
-		if (chrLookAhead == '\n') {
+		if (context->lookAhead == '\n' || context->lookAhead == EOF) {
 			break;
 		}
 
-		if (chrLookAhead == ',') {
-			readChar(file);
-			skipWhitespace(file);
+		if (param > 0) {
+			if (context->lookAhead == ',') {
+				readChar(context); //Eat comma
+				skipWhitespace(context);
+			} else {
+				expect(context, "',' or newline");
+			}
 		}
 
 		//Something exists after the instruction
 		char op1Buffer[MAX_TOKEN_SIZE];
-		if (isdigit(chrLookAhead)) {
+
+		if (isdigit(context->lookAhead)) {
 			//A Number
-			readNumber(file, op1Buffer);
-			instruction.op[param] = classifyNumber(op1Buffer);
-		} else if (isalpha(chrLookAhead) || chrLookAhead == '_') {
+			readNumber(context);
+			instruction.op[param] = classifyNumber(context->tokenBuffer);
+		} else if (isalpha(context->lookAhead) || context->lookAhead == '_') {
 			//A DEFINE name
-			readIdent(file, op1Buffer);
-		} else if (chrLookAhead == '[') {
+			readIdent(context);
+		} else if (context->lookAhead == '[') {
 			//A Memory Address Operand
 			//These are denoted by square brackets
-			readChar(file); //Eat '['
-			skipWhitespace(file);
+			readChar(context); //Eat '['
+			skipWhitespace(context);
 
 			//A memory address can contain a number, or a identifier
-			if (isdigit(chrLookAhead)) {
-				readNumber(file, op1Buffer);
+			if (isdigit(context->lookAhead)) {
+				readNumber(context);
 			} else {
-				readIdent(file, op1Buffer);
+				readIdent(context);
 			}
 
-			readChar(file); //eat ']'
+			readChar(context); //eat ']'
 		}
 
-		skipWhitespace(file);
+		skipWhitespace(context);
 	}
 
 	//Now try to match what we found to an entry in our table
-findInstructionByOperands(instruction);
+	findInstructionByOperands(instruction);
 
 }

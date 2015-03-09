@@ -18,22 +18,22 @@ typedef struct {
 	FILE* file;
 	int lineNumber;
 	int charNumber;
+	char lookAhead;
 	char tokenBuffer[MAX_TOKEN_SIZE];
 	char lineBuffer[MAX_LINE_BUFFER];
+	int inseideQuotes;
 } FILECONTEXT;
 
-char* readWord(FILE* file, char* buffer);
-char* readIdent(FILE* file, char* buffer);
-char readChar(FILE* file);
-char readChar2(FILECONTEXT* file);
-char* readLine(FILE* file, char* buffer);
-char* readNumber(FILE* file, char* buffer);
+char* readIdent(FILECONTEXT* context);
+char readChar(FILECONTEXT* context);
+char* readLine(FILECONTEXT* context);
+char* readNumber(FILECONTEXT* context);
 
-void skipWhitespace(FILE* file);
-void skipWhitespaceLines(FILE* file);
-void skipLine(FILE* file);
+void skipWhitespace(FILECONTEXT* context);
+void skipWhitespaceLines(FILECONTEXT* context);
+void skipLine(FILECONTEXT* context);
 
-char prefetchChar(FILE* file);
-void expect(char expected);
+char prefetchChar(FILECONTEXT* context);
+void expect(FILECONTEXT* context, char* expected);
 
 #endif /* PARSER_H_ */

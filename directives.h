@@ -9,6 +9,6 @@
 #define DIRECTIVES_H_
 
 
-void doDirective(FILE* file);
+void doDirective(FILECONTEXT* context);
 
 #endif /* DIRECTIVES_H_ */

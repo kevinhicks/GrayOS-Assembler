@@ -4,7 +4,7 @@ add al;
 mov
 sub ; this is a comment
 add al, al
-add al,al
+add al, al
 add al , al
 add al ,al
 add 1,1

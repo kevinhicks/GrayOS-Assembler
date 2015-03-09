@@ -8,6 +8,8 @@
 #ifndef INSTRUCTIONS_H_
 #define INSTRUCTIONS_H_
 
+#include "parser.h"
+
 typedef struct {
 	char op[MAX_TOKEN_SIZE];
 	int opType;
@@ -22,6 +24,6 @@ typedef struct {
 	int bits;
 } INSTRUCTION;
 
-void doInstruction(FILE* file);
+void doInstruction(FILECONTEXT* context);
 
 #endif /* INSTRUCTIONS_H_ */

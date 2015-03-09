@@ -6,121 +6,118 @@
  */
 
 #include "stdio.h"
+#include "stdlib.h"
+
 #include "parser.h"
 #include "string.h"
 #include "ctype.h"
 #include "utils.h"
 #include "constants.h"
 
-char* readWord(FILE* file, char* buffer) {
+char* readIdent(FILECONTEXT* context) {
 	int index = 0;
 
-	//A 'word' must start with a letter
-	if ((!isalpha(chrLookAhead) || chrLookAhead == '_') && chrLookAhead != EOF) {
-		error("Expected Letter");
-	}
-
-	while ((isalpha(chrLookAhead) || chrLookAhead == '_') && chrLookAhead != EOF) {
-		buffer[index++] = chrLookAhead;
-		readChar(file);
-	}
-
-	buffer[index++] = '\0';
-
-	skipWhitespace(file);
-
-	return buffer;
-}
-
-char* readIdent(FILE* file, char* buffer) {
-	return readWord(file, buffer);
-}
-
-void expect(char expected) {
-
-}
-
-char readChar(FILE* file) {
-	chrLookAhead = getc(file);
-
-	if (insideQuotes == FALSE) {
-		if (chrLookAhead == ';') {
-			skipLine(file);
+		//A 'word' must start with a letter
+		if ((!isalpha(context->lookAhead) || context->lookAhead == '_') && context->lookAhead != EOF) {
+			expect(context, "Letter");
 		}
-	}
-	return chrLookAhead;
+
+		while ((isalpha(context->lookAhead) || context->lookAhead == '_') && context->lookAhead != EOF) {
+			context->tokenBuffer[index++] = context->lookAhead;
+			readChar(context);
+		}
+
+		context->tokenBuffer[index++] = '\0';
+
+		skipWhitespace(context);
+
+		return context->tokenBuffer;
 }
 
-char readChar2(FILECONTEXT* context) {
-	chrLookAhead = getc(context->file);
+char readChar(FILECONTEXT* context) {
+	if(context->lookAhead == '\n') {
+		context->lineNumber++;
+		context->charNumber = 0;
+	}
+
+	context->lookAhead = getc(context->file);
+
 
 	if (insideQuotes == FALSE) {
-		if (chrLookAhead == ';') {
+		if (context->lookAhead == ';') {
 			skipLine(context);
 		}
 	}
-	return chrLookAhead;
+	context->charNumber++;
+	return context->lookAhead;
 }
 
-void skipLine(FILE* file) {
-	while (chrLookAhead != EOF && chrLookAhead != '\n') {
-		readChar(file);
+void skipLine(FILECONTEXT* context) {
+	while (context->lookAhead != EOF && context->lookAhead != '\n') {
+		readChar(context);
 	}
 
-	skipWhitespace(file);
+	skipWhitespace(context);
 }
 
-char* readNumber(FILE* file, char* buffer) {
+char* readNumber(FILECONTEXT* context) {
 	int index = 0;
 
 	//A 'number' must start with a letter
-	if (!isdigit(chrLookAhead) && chrLookAhead != EOF) {
-		error("Expected Digit");
+	if (!isdigit(context->lookAhead) && context->lookAhead != EOF) {
+		expect(context, "Digit");
 	}
 
-	while (isdigit(chrLookAhead) && chrLookAhead != EOF) {
-		buffer[index++] = chrLookAhead;
-		readChar(file);
+	while (isdigit(context->lookAhead) && context->lookAhead != EOF) {
+		context->tokenBuffer[index++] = context->lookAhead;
+		readChar(context);
 	}
 
-	buffer[index++] = '\0';
+	context->tokenBuffer[index++] = '\0';
 
-	skipWhitespace(file);
+	skipWhitespace(context);
 
-	return buffer;
+	return context->tokenBuffer;
 }
 
-char* readLine(FILE* file, char* buffer) {
+char* readLine(FILECONTEXT* context) {
 	int index = 0;
 
-	while (chrLookAhead != EOF && chrLookAhead != '\n') {
-		if (chrLookAhead == ';') {
-			skipLine(file);
+	while (context->lookAhead != EOF && context->lookAhead != '\n') {
+		if (context->lookAhead == ';') {
+			skipLine(context);
 			break;
 		}
 
-		buffer[index++] = chrLookAhead;
+		context->tokenBuffer[index++] = context->lookAhead;
 
-		readChar(file);
+		readChar(context);
 	}
 
-	buffer[index] = '\0';
+	context->tokenBuffer[index] = '\0';
 
-	skipWhitespace(file);
+	skipWhitespace(context);
 
-	return buffer;
+	return context->tokenBuffer;
 }
 
-void skipWhitespace(FILE* file) {
-	while ((chrLookAhead == ' ' || chrLookAhead == '\t')
-			&& (chrLookAhead != EOF)) {
-		readChar(file);
+void skipWhitespace(FILECONTEXT* context) {
+	while ((context->lookAhead == ' ' || context->lookAhead == '\t')
+			&& (context->lookAhead != EOF)) {
+		readChar(context);
 	}
 }
 
-void skipWhitespaceLines(FILE* file) {
-	while ((chrLookAhead == ' ' || chrLookAhead == '\t' || chrLookAhead == '\n')
-			&& (chrLookAhead != EOF)) {
-		readChar(file);
+void skipWhitespaceLines(FILECONTEXT* context) {
+	while ((context->lookAhead == ' ' || context->lookAhead == '\t' || context->lookAhead == '\n')
+			&& (context->lookAhead != EOF)) {
+		readChar(context);
 	}
 }
+
+
+void expect(FILECONTEXT* context, char* expected) {
+	printf("Line: %d Char: %d Expected: %s Found: '%c'\n", context->lineNumber, context->charNumber, expected, context->lookAhead);
+	exit(0);
+}
+

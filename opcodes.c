@@ -18,7 +18,7 @@
 //operand 2
 int opcodes[OPCODE_TABLE_SIZE][6] = { { INS_ADD, 0x00, OP_REG8, OP_REG8, 0 }, {
 		INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 }, { INS_ADD, 0x02, OP_REG8, OP_REG8,
-		0 }, { INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 }, { INS_ADD, 0x04, OP_IMM16, OP_IMM16, 0 } };
+		0 }, { INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 }, { INS_ADD, 0x04, OP_IMM16, OP_IMM16 , 0 } };
 
 char instructions[300][10] = { "AAA", "ADD", "\0" };
 
