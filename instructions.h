@@ -24,6 +24,13 @@ typedef struct {
 	int bits;
 } INSTRUCTION;
 
-void doInstruction(FILECONTEXT* context);
+//void doInstruction(FILECONTEXT* context);
+
+#define DO_INS_PHASE_COUNT 		0
+#define DO_INS_PHASE_ASSEMBLE	1
+
+
+int doInstruction(ASSEMBLECONTEXT* context, int phase);
+
 
 #endif /* INSTRUCTIONS_H_ */
