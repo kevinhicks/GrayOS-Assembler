@@ -22,7 +22,12 @@
 #define DRTV_DD			8
 #define DRTV_DQ			9
 
-int findDirective(char* ident);
+#define DRTV_PHASE0		1
+#define DRTV_PHASE1		2
+#define DRTV_PHASE2		4
+#define DRTV_ANY		DRTV_PHASE0 | DRTV_PHASE1 | DRTV_PHASE2
+
+int findDirective(char* ident, int phase);
 
 void doDirective(int directive, ASSEMBLECONTEXT* context);
 void findAndDoDirective(FILECONTEXT* context);

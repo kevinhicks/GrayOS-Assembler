@@ -14,6 +14,7 @@
 #include "assemble.h"
 #include "parser.h"
 #include "directives.h"
+#include "instructions.h"
 
 //Psuedocode
 //Pass 0
@@ -108,9 +109,7 @@ void pass0(ASSEMBLECONTEXT* context) {
 			 */
 		}
 
-		printf("%s\n", context->currFile->lineBuffer);
 		fprintf(context->unifiedFile->file, "%s\n", context->currFile->lineBuffer);
-		//Look For Define, or MACRO
 	}
 }
 
@@ -132,22 +131,20 @@ void pass1(ASSEMBLECONTEXT* context) {
 
 		//A non-empty line
 		if (context->currFile->lookAhead != '\0') {
-
-			doInstruction();
-
 			//read the first label/instruction/macro etc
 			readIdent(context);
 			if (context->currFile->lookAhead == ':') {
 				//This is a label
 				addLabel(context, context->currFile->tokenBuffer);
-			} else {
+			} else if (findDirective(context->currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
+				//Handle appropriate directives
+			} else if (findInstruction(context->currFile->tokenBuffer) != INS_NOT_FOUND) {
 				//Try to assemble it
-				doInstruction(context);
+				context->outputPos += doInstruction(context, DO_INS_PHASE_COUNT);
 			}
 
-
 		}
-		fprintf(context->interFile->file, "%08x  %s\n", pos, context->currFile->lineBuffer);
+		fprintf(context->interFile->file, "%08X  %s\n", pos, context->currFile->lineBuffer);
 		//Look For Define, or MACRO
 	}
 }
@@ -188,4 +185,3 @@ void addLabel(ASSEMBLECONTEXT* context, char* labelName) {
 	tail->position = context->outputPos;
 	tail->nextEntry = NULL;
 }
-

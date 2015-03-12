@@ -80,6 +80,12 @@ char readChar(ASSEMBLECONTEXT* context) {
 		context->currFile->lookAhead = context->currFile->lineBuffer[context->currFile->lookAheadPosition++];
 		context->currFile->charNumber++;
 
+		//Start of a comment, noting else on this line is valid code
+		if(context->currFile->lookAhead == ';')
+		{
+			context->currFile->lookAhead = '\0';
+		}
+
 		return context->currFile->lookAhead;
 	}
 	return '\0';
@@ -135,8 +141,7 @@ char* readLine(ASSEMBLECONTEXT* context) {
 }
 
 void skipWhitespace(ASSEMBLECONTEXT* context) {
-	while ((context->currFile->lookAhead == ' ' || context->currFile->lookAhead == '\t')
-			&& (context->currFile->lookAhead != EOF)) {
+	while (context->currFile->lookAhead == ' ' || context->currFile->lookAhead == '\t') {
 		readChar(context);
 	}
 }

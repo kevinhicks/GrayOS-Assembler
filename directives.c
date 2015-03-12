@@ -25,7 +25,21 @@ char directives[][10] = { "INCLUDE",
 		"DQ",
 		"\0" };
 
-int findDirective(char* ident) {
+int directivesTable[][2] = {
+		{ DRTV_INCLUDE, DRTV_PHASE0 },
+		{ DRTV_DEFINE, DRTV_PHASE1 },
+		{ DRTV_IFDEF, DRTV_PHASE0 | DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_ENDIF, DRTV_PHASE0 | DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_BASE, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_BITS, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_DB, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_DW, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_DD, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_DQ, DRTV_PHASE1 | DRTV_PHASE2 },
+		{ DRTV_NOT_FOUND, 0 }
+};
+
+int findDirective(char* ident, int phase) {
 
 	char copyOfToken[MAX_TOKEN_SIZE];
 	strcpy(copyOfToken, ident);
@@ -36,8 +50,16 @@ int findDirective(char* ident) {
 	//until we find a match, or then end
 	//of the list denoted by a '\0'
 	while (directives[index][0] != '\0') {
+		//Does the name match
 		if (strcmp(copyOfToken, directives[index]) == 0) {
-			return index;
+			//Is it for the correct phase
+			int phaseIndex = 0;
+			while (directivesTable[phaseIndex][0] != index && directivesTable[phaseIndex][0] != DRTV_NOT_FOUND) {
+				phaseIndex++;
+
+			}
+			if ((directivesTable[phaseIndex][1] & phase) > 0)
+				return index;
 		}
 		index++;
 	}

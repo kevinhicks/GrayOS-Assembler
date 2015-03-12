@@ -1,14 +1,16 @@
-00000000  include 'test2.src'
-00000000  
-00000000  begin:
-00000000  add al;
-00000000  mov
-00000000  sub ; this is a comment
-00000000  add al, al
-00000000  add al, al
-00000000  add al , al
-00000000  add al ,al
-00000000  add 1,1
-00000000  add al, [100]
-00000000  add [100], al
-00000000  end:
+00000000  aaa
+00000001  aaa
+00000002  include 'test2.src'
+00000002  
+00000002  begin:
+00000002  add al;
+00000003  mov
+00000004  sub ; this is a comment
+00000005  add al, al
+00000006  add al, al
+00000007  add al , al
+00000008  add al ,al
+00000009  add 1,1
+0000000A  add al, [100]
+0000000B  add [100], al
+0000000C  end:
