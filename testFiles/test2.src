@@ -1,0 +1,4 @@
+define this ; this is used later
+define test_expression (A+B*C)
+
+mul ecx, ecx

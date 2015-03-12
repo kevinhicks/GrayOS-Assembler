@@ -1,0 +1,14 @@
+00000000  include 'test2.src'
+00000000  
+00000000  begin:
+00000000  add al;
+00000000  mov
+00000000  sub ; this is a comment
+00000000  add al, al
+00000000  add al, al
+00000000  add al , al
+00000000  add al ,al
+00000000  add 1,1
+00000000  add al, [100]
+00000000  add [100], al
+00000000  end:
