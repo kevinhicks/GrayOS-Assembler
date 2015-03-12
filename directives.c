@@ -13,15 +13,48 @@
 #include "directives.h"
 #include "utils.h"
 
-char directives[200][10] = { "INCLUDE", "DEFINE", "IFDEF", "ENDIF", "BASE",
-		"BITS", "\0" };
+char directives[][10] = { "INCLUDE",
+		"DEFINE",
+		"IFDEF",
+		"ENDIF",
+		"BASE",
+		"BITS",
+		"DB",
+		"DW",
+		"DD",
+		"DQ",
+		"\0" };
 
-void doDirective(FILECONTEXT* context) {
+int findDirective(char* ident) {
+
+	char copyOfToken[MAX_TOKEN_SIZE];
+	strcpy(copyOfToken, ident);
+
 	int index = 0;
 
-	readChar(context); //Eat the '#'
+	//Look through the list of directive
+	//until we find a match, or then end
+	//of the list denoted by a '\0'
+	while (directives[index][0] != '\0') {
+		if (strcmp(copyOfToken, directives[index]) == 0) {
+			return index;
+		}
+		index++;
+	}
 
-	readIdent(context);
+	return DRTV_NOT_FOUND;
+}
+
+void doDirective(int directive, ASSEMBLECONTEXT* context) {
+	switch (directive) {
+		case DRTV_INCLUDE:
+			doInclude(context);
+			break;
+	}
+}
+
+void findAndDoDirective(FILECONTEXT* context) {
+	int index = 0;
 
 	//Create a copy of the directive, we will modify it before comparison later
 	char copyOfToken[MAX_TOKEN_SIZE];
@@ -38,9 +71,16 @@ void doDirective(FILECONTEXT* context) {
 		readLine(context);
 		strcpy(defineName, context->tokenBuffer);
 
-	} else {
-		skipLine(context);
 	}
+	else if (strcmp(copyOfToken, "DEFINE") == 0) {
+
+	}
+	skipLine(context);
+
 	index++;
 
 }
+
+void doInclude(ASSEMBLECONTEXT* context) {
+}
+

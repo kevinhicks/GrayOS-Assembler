@@ -10,30 +10,26 @@
 
 #include "stdio.h"
 #include "constants.h"
+#include "assemble.h"
 
 char chrLookAhead;
 int insideQuotes;
 
-typedef struct {
-	FILE* file;
-	int lineNumber;
-	int charNumber;
-	char lookAhead;
-	char tokenBuffer[MAX_TOKEN_SIZE];
-	char lineBuffer[MAX_LINE_BUFFER];
-	int inseideQuotes;
-} FILECONTEXT;
+void init(ASSEMBLECONTEXT* assembleContext);
 
-char* readIdent(FILECONTEXT* context);
-char readChar(FILECONTEXT* context);
-char* readLine(FILECONTEXT* context);
-char* readNumber(FILECONTEXT* context);
+char* readIdent(ASSEMBLECONTEXT* context);
+char readChar(ASSEMBLECONTEXT* context);
+char* readLine(ASSEMBLECONTEXT* context);
+char* readNumber(ASSEMBLECONTEXT* context);
 
-void skipWhitespace(FILECONTEXT* context);
-void skipWhitespaceLines(FILECONTEXT* context);
-void skipLine(FILECONTEXT* context);
+void skipWhitespace(ASSEMBLECONTEXT* context);
+void skipWhitespaceLines(ASSEMBLECONTEXT* context);
+void skipLine(ASSEMBLECONTEXT* context);
 
-char prefetchChar(FILECONTEXT* context);
-void expect(FILECONTEXT* context, char* expected);
+char prefetchChar(ASSEMBLECONTEXT* context);
+void expect(ASSEMBLECONTEXT* context, char* expected);
+
+void readLineIntoBuffer(ASSEMBLECONTEXT* context);
+char readCharIntoBuffer(ASSEMBLECONTEXT* context);
 
 #endif /* PARSER_H_ */

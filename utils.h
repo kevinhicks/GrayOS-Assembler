@@ -16,4 +16,6 @@ char chrToLower(char letter);
 
 void error(char* message);
 
+typedef int bool;
+
 #endif /* UTILS_H_ */
