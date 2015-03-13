@@ -9,6 +9,7 @@
 #define INSTRUCTIONS_H_
 
 #include "parser.h"
+#include "assemble.h"
 
 
 #define INS_NOT_FOUND	-1
@@ -141,7 +142,8 @@ typedef struct {
 } PARAMETER;
 
 typedef struct {
-	int ins;
+	int ins;			//The ID of the instruction
+	int* opTableEntry;	//Pointer to the entry in the opcode table that best matches this instruction
 	PARAMETER op[3];
 	int bits;
 } INSTRUCTION;
@@ -152,7 +154,7 @@ typedef struct {
 #define DO_INS_PHASE_ASSEMBLE	1
 
 
-int doInstruction(ASSEMBLECONTEXT* context, int phase);
+void doInstruction(ASSEMBLECONTEXT* context, int phase);
 
 int findInstruction(char* word);
 

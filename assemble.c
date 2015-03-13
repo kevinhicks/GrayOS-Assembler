@@ -15,6 +15,7 @@
 #include "parser.h"
 #include "directives.h"
 #include "instructions.h"
+#include "opcodes.h"
 
 //Psuedocode
 //Pass 0
@@ -58,10 +59,12 @@ void endAssembly(ASSEMBLECONTEXT* context) {
 
 void assembleFile(ASSEMBLECONTEXT* assembleContext, char* fileName) {
 	FILECONTEXT newFileContext;
+	INSTRUCTION ins;
 
 	newFileContext.file = fopen(fileName, "r");
 	newFileContext.lineNumber = 0;
 	newFileContext.charNumber = 1;
+	newFileContext.insDesc = &ins;
 
 	//Point the new filesContexts parent to the previous file
 	newFileContext.parentFile = assembleContext->currFile;
@@ -140,11 +143,15 @@ void pass1(ASSEMBLECONTEXT* context) {
 				//Handle appropriate directives
 			} else if (findInstruction(context->currFile->tokenBuffer) != INS_NOT_FOUND) {
 				//Try to assemble it
-				context->outputPos += doInstruction(context, DO_INS_PHASE_COUNT);
+				//context->outputPos +=
+
+				int* opcode = doInstruction(context, DO_INS_PHASE_COUNT);
+
+				context->outputPos += countOpcodeBytes(context, opcode);
 			}
 
 		}
-		fprintf(context->interFile->file, "%08X  %s\n", pos, context->currFile->lineBuffer);
+		fprintf(context->interFile->file, "0x%08X  %s\n", pos, context->currFile->lineBuffer);
 		//Look For Define, or MACRO
 	}
 }

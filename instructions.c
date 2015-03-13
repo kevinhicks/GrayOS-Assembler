@@ -132,14 +132,17 @@ INSTRUCTION instruction;
 
  }
  */
-int doInstruction(ASSEMBLECONTEXT* context, int phase) {
+
+//Populate the context->currFile->insDec with the information about this instruction
+void doInstruction(ASSEMBLECONTEXT* context, int phase) {
+
 
 	int ins = findInstruction(context->currFile->tokenBuffer);
 
 	printf("Instruction: ");
 	if (ins != INS_NOT_FOUND) {
 
-		printf("%s\n", context->currFile->tokenBuffer);
+		printf("%s ", context->currFile->tokenBuffer);
 
 		instruction.ins = ins;
 
@@ -148,9 +151,10 @@ int doInstruction(ASSEMBLECONTEXT* context, int phase) {
 		//parse up to 3 params
 		for (param = 0; param < 3; param++) {
 
-			if (context->currFile->lookAhead == '\0' ) {
+			if (context->currFile->lookAhead == '\0') {
 				break;
 			}
+
 
 			if (param > 0) {
 				if (context->currFile->lookAhead == ',') {
@@ -162,7 +166,7 @@ int doInstruction(ASSEMBLECONTEXT* context, int phase) {
 			}
 
 			//Something exists after the instruction
-			char op1Buffer[MAX_TOKEN_SIZE];
+			//char op1Buffer[MAX_TOKEN_SIZE];
 
 			if (isdigit(context->currFile->lookAhead)) {
 				//A Number
@@ -191,17 +195,15 @@ int doInstruction(ASSEMBLECONTEXT* context, int phase) {
 		}
 
 		//Now try to match what we found to an entry in our table
-		findInstructionByOperands(instruction);
-	} else {
-		printf("UNKNOWN %s\n", context->currFile->tokenBuffer);
+		return findOpcodeByOperands(instruction);
 
-		if(phase == DO_INS_PHASE_COUNT) {
-			return 0;
-		} else {
-			return OP_NOT_FOUND;
-		}
+		context->currFile->insDesc->ins = OP_NOT_FOUND;
+
+	} else {
+		printf("UNKNOWN INSTRUCTION %s\n", context->currFile->tokenBuffer);
 	}
-	return 1;
+
+	context->currFile->insDesc->ins = OP_NOT_FOUND;
 }
 
 int findInstruction(char* word) {
@@ -215,7 +217,7 @@ int findInstruction(char* word) {
 	int insIndex = 0;
 
 	//Loop thru listing of instructions, and see if we can fine this one
-	while(instructions[insIndex][0] != '\0') {
+	while (instructions[insIndex][0] != '\0') {
 		//If we find it, then return the index
 		if (strcmp(instructions[insIndex], cpyOfWord) == 0) {
 			return insIndex;

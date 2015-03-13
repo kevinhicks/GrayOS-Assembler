@@ -1,3 +1,10 @@
+
+define test 100
+
+mov al, ah
+mov al, [100]
+move al, test
+
 aaa
 aaa
 include 'test2.src'

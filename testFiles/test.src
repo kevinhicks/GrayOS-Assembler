@@ -1,3 +1,14 @@
+define test 100
+
+mov al, ah
+mov al, [100]
+mov al, test
+mov al, 100
+mov al, 0x100
+mov al, 1+2
+mov al, [bp+sp+8] ;this should be invalid
+mov al, [bp+si+8]
+
 aaa
 aaa
 include 'test2.src'

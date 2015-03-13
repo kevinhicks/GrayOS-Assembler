@@ -17,10 +17,10 @@
 #include "instructions.h"
 #include "assemble.h"
 
+ASSEMBLECONTEXT context;
+
 int main() {
 	char* inputFileName = "testFiles\\test.src";
-
-	ASSEMBLECONTEXT context;
 
 	FILECONTEXT unifiedFile;
 	FILECONTEXT interFile;
@@ -38,59 +38,3 @@ int main() {
 
 	return 0;
 }
-/*
- void assemble(char* fileName) {
-
- printf("Assembling: %s\n", fileName);
-
- ASSEMBLECONTEXT assembleContext;
-
- FILECONTEXT fileContext;
-
- fileContext.file = fopen(fileName, "r");
- fileContext.lineNumber = 1;
- fileContext.charNumber = 1;
-
- //prime the pump
- readChar(&fileContext);
- skipWhitespaceLines(&fileContext);
-
- assembleFile(&fileContext);
-
- pass0(&fileContext); 	//Read & Store Macros
- pass1(&fileContext);	//Expand Macros & Count Instructions
- pass2(&fileContext);	//Assemble & Output
- }
-
- isting file
-
- void pass0(FILECONTEXT* fileContext) {
-
- while (fileContext.lookAhead != EOF) {
-
- readLine(&fileContext);
-
- assembleLine(&fileContext);
-
- if (fileContext.lookAhead == ';') {
- //Comment
- skipLine(&fileContext);
- } else if (fileContext.lookAhead == ',') {
- //TODO Handle multiple parameters
- readChar(&fileContext);
- skipWhitespace(&fileContext);
- } else if (fileContext.lookAhead == '#') {
- //Directive
- doDirective(&fileContext);
- } else {
- //Instruction
- doInstruction(&fileContext);
- }
-
- skipWhitespaceLines(&fileContext);
- }
- fclose(fileContext.file);
-
- printf("Assemble Complete\n");
- }
- */

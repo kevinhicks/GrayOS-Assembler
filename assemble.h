@@ -11,6 +11,7 @@
 
 #include "stdio.h"
 #include "constants.h"
+#include "instructions.h"
 
 typedef struct MACROTABLEENTRY MACROTABLEENTRY;
 typedef struct ASSEMBLECONTEXT ASSEMBLECONTEXT;
@@ -63,6 +64,7 @@ struct FILECONTEXT {
 	char lineBufferLookAhead;			//The look ahead character looking at the next character from the file
 	char lineBuffer[MAX_LINE_BUFFER_SIZE];	//The text of the line we are currently assembling
 
+	INSTRUCTION* insDesc;
 	int inseideQuotes;
 };
 
