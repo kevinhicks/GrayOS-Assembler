@@ -11,6 +11,7 @@
 #include "ctype.h"
 #include "string.h"
 
+#include "globals.h"
 #include "assemble.h"
 #include "parser.h"
 #include "directives.h"
@@ -38,26 +39,26 @@
 //		output binary to output file
 //		output listing to l
 
-void beginAssembly(ASSEMBLECONTEXT* context) {
+void beginAssembly() {
 
-	context->unifiedFile->file = fopen("testFiles\\test.uni", "w+");
-	context->interFile->file = fopen("testFiles\\test.int", "w+");
-	context->listingFile->file = fopen("testFiles\\test.lst", "w+");
-	context->outputFile->file = fopen("testFiles\\test.out", "w+");
+	context.unifiedFile->file = fopen("testFiles\\test.uni", "w+");
+	context.interFile->file = fopen("testFiles\\test.int", "w+");
+	context.listingFile->file = fopen("testFiles\\test.lst", "w+");
+	context.outputFile->file = fopen("testFiles\\test.out", "w+");
 
-	context->firstLabelEntry = NULL;
-	context->firstMacroEntry = NULL;
-	context->fileDepth = 1;
+	context.firstLabelEntry = NULL;
+	context.firstMacroEntry = NULL;
+	context.fileDepth = 1;
 }
 
-void endAssembly(ASSEMBLECONTEXT* context) {
-	fclose(context->unifiedFile->file);
-	fclose(context->interFile->file);
-	fclose(context->listingFile->file);
-	fclose(context->outputFile->file);
+void endAssembly() {
+	fclose(context.unifiedFile->file);
+	fclose(context.interFile->file);
+	fclose(context.listingFile->file);
+	fclose(context.outputFile->file);
 }
 
-void assembleFile(ASSEMBLECONTEXT* assembleContext, char* fileName) {
+void assembleFile(char* fileName) {
 	FILECONTEXT newFileContext;
 	INSTRUCTION ins;
 
@@ -67,44 +68,44 @@ void assembleFile(ASSEMBLECONTEXT* assembleContext, char* fileName) {
 	newFileContext.insDesc = &ins;
 
 	//Point the new filesContexts parent to the previous file
-	newFileContext.parentFile = assembleContext->currFile;
+	newFileContext.parentFile = context.currFile;
 
 	//And set the newFileContext as the current file
-	assembleContext->currFile = &newFileContext;
+	context.currFile = &newFileContext;
 
 	printf("Pass 0\n");
-	pass0(assembleContext); //Read & Store Macros, symbolic constants, and handle includes
+	pass0(); //Read & Store Macros, symbolic constants, and handle includes
 
 	printf("Pass 1\n");
-	pass1(assembleContext);	//Expand Macros & Count Instructions
+	pass1();	//Expand Macros & Count Instructions
 
 	printf("Pass 2\n");
-	pass2(assembleContext);	//Assemble & Output
+	pass2();	//Assemble & Output
 
 	fclose(newFileContext.file);
 
 	//revert back to the previous parent file, so that processing may continue
-	assembleContext->currFile = newFileContext.parentFile;
+	context.currFile = newFileContext.parentFile;
 
 	printf("Assemble Complete: %s\n", fileName);
 }
 
-void pass0(ASSEMBLECONTEXT* context) {
+void pass0() {
 
 	//Prime pump
-	readCharIntoBuffer(context);
-	while (context->currFile->lineBufferLookAhead != EOF) {
-		readLineIntoBuffer(context);
+	readCharIntoBuffer();
+	while (context.currFile->lineBufferLookAhead != EOF) {
+		readLineIntoBuffer();
 
-		if (context->currFile->lookAhead != '\0') {
+		if (context.currFile->lookAhead != '\0') {
 
 			/*
 			 readIdent(context);
-			 if (context->currFile->lookAhead == ':') {
+			 if (context.currFile->lookAhead == ':') {
 			 //THis is a label
-			 addLabel(context, context->currFile->tokenBuffer);
+			 addLabel(context, context.currFile->tokenBuffer);
 			 }
-			 int directive = findDirective(context->currFile->tokenBuffer);
+			 int directive = findDirective(context.currFile->tokenBuffer);
 
 			 if (directive != DRTV_NOT_FOUND) {
 			 doDirective(directive, context);
@@ -112,74 +113,74 @@ void pass0(ASSEMBLECONTEXT* context) {
 			 */
 		}
 
-		fprintf(context->unifiedFile->file, "%s\n", context->currFile->lineBuffer);
+		fprintf(context.unifiedFile->file, "%s\n", context.currFile->lineBuffer);
 	}
 }
 
-void pass1(ASSEMBLECONTEXT* context) {
+void pass1() {
 
-	context->currFile->file = context->unifiedFile->file;
+	context.currFile->file = context.unifiedFile->file;
 
-	context->currFile->lineNumber = 0;
-	context->currFile->charNumber = 1;
-	context->outputPos = 0;
+	context.currFile->lineNumber = 0;
+	context.currFile->charNumber = 1;
+	context.outputPos = 0;
 
-	rewind(context->currFile->file);
+	rewind(context.currFile->file);
 	//Prime pump
-	readCharIntoBuffer(context);
-	while (context->currFile->lineBufferLookAhead != EOF) {
-		readLineIntoBuffer(context);
+	readCharIntoBuffer();
+	while (context.currFile->lineBufferLookAhead != EOF) {
+		readLineIntoBuffer();
 
-		int pos = context->outputPos;
+		int pos = context.outputPos;
 
 		//A non-empty line
-		if (context->currFile->lookAhead != '\0') {
+		if (context.currFile->lookAhead != '\0') {
 			//read the first label/instruction/macro etc
-			readIdent(context);
-			if (context->currFile->lookAhead == ':') {
+			readIdent();
+			if (context.currFile->lookAhead == ':') {
 				//This is a label
-				addLabel(context, context->currFile->tokenBuffer);
-			} else if (findDirective(context->currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
+				addLabel(context.currFile->tokenBuffer, context.outputPos);
+			} else if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
 				//Handle appropriate directives
-			} else if (findInstruction(context->currFile->tokenBuffer) != INS_NOT_FOUND) {
+			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
 				//Try to assemble it
-				//context->outputPos +=
+				//context.outputPos +=
 
-				int* opcode = doInstruction(context, DO_INS_PHASE_COUNT);
+				doInstruction();
+				context.outputPos += countOpcodeBytes();
 
-				context->outputPos += countOpcodeBytes(context, opcode);
 			}
 
 		}
-		fprintf(context->interFile->file, "0x%08X  %s\n", pos, context->currFile->lineBuffer);
+		fprintf(context.interFile->file, "0x%08X  %s\n", pos, context.currFile->lineBuffer);
 		//Look For Define, or MACRO
 	}
 }
 
-void pass2(ASSEMBLECONTEXT* context) {
-	context->outputPos = 0;
+void pass2() {
+	context.outputPos = 0;
 
-	emitLabelsToListing(context);
+	emitLabelsToListing();
 }
 
-void emitLabelsToListing(ASSEMBLECONTEXT* context) {
-	fprintf(context->listingFile->file, "LABELS:\n");
+void emitLabelsToListing() {
+	fprintf(context.listingFile->file, "LABELS:\n");
 
-	LABELTABLEENTRY* head = context->firstLabelEntry;
+	LABELTABLEENTRY* head = context.firstLabelEntry;
 
 	while (head != NULL) {
-		fprintf(context->listingFile->file, "%-10s %d\n", head->name, head->position);
+		fprintf(context.listingFile->file, "%-10s %d\n", head->name, head->position);
 
 		head = head->nextEntry;
 	}
 }
 
-void addLabel(ASSEMBLECONTEXT* context, char* labelName) {
-	LABELTABLEENTRY* tail = context->firstLabelEntry;
+void addLabel(char* labelName, int position) {
+	LABELTABLEENTRY* tail = context.firstLabelEntry;
 
 	if (tail == NULL) {
-		context->firstLabelEntry = malloc(sizeof(LABELTABLEENTRY));
-		tail = context->firstLabelEntry;
+		context.firstLabelEntry = malloc(sizeof(LABELTABLEENTRY));
+		tail = context.firstLabelEntry;
 	} else {
 		while (tail->nextEntry != NULL) {
 			tail = tail->nextEntry;
@@ -189,6 +190,6 @@ void addLabel(ASSEMBLECONTEXT* context, char* labelName) {
 	}
 
 	strcpy(tail->name, labelName);
-	tail->position = context->outputPos;
+	tail->position = position;
 	tail->nextEntry = NULL;
 }

@@ -154,7 +154,7 @@ typedef struct {
 #define DO_INS_PHASE_ASSEMBLE	1
 
 
-void doInstruction(ASSEMBLECONTEXT* context, int phase);
+void doInstruction();
 
 int findInstruction(char* word);
 

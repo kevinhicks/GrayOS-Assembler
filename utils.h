@@ -16,6 +16,10 @@ char chrToLower(char letter);
 
 void error(char* message);
 
+int isValidHexChar(char digit);
+
+int strToInt(char* string, int radix);
+
 typedef int bool;
 
 #endif /* UTILS_H_ */

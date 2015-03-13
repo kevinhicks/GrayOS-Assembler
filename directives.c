@@ -67,10 +67,10 @@ int findDirective(char* ident, int phase) {
 	return DRTV_NOT_FOUND;
 }
 
-void doDirective(int directive, ASSEMBLECONTEXT* context) {
+void doDirective(int directive) {
 	switch (directive) {
 		case DRTV_INCLUDE:
-			doInclude(context);
+			doInclude();
 			break;
 	}
 }

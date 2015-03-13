@@ -7,6 +7,9 @@
 
 #include "utils.h"
 #include "stdio.h"
+#include "stdlib.h"
+
+#include "constants.h"
 
 char* lowers = "abcdefghijklmnopqrstuvwxyz";
 char* uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -61,4 +64,46 @@ char chrToLower(char letter) {
 void error(char* message) {
 	printf("\n**%s**\n", message);
 	exit(0);
+}
+
+int strToInt(char* string, int radix) {
+	int index = 0;
+	int output = 0;
+
+	while (string[index] != '\0') {
+		output *= radix;
+
+		int digitVal = string[index];
+
+		//convert '0'-'9' to 0-9
+		digitVal -= '0';
+
+		//convert 'A'-'F' to A-F
+		if(digitVal > 10) {
+			digitVal = chrToUpper(string[index]);
+			digitVal -= ('A' - 10);
+		}
+
+		output+= digitVal;
+
+		index++;
+	}
+
+	return output;
+}
+
+int isValidHexChar(char digit) {
+	//look for 0-9
+	if (digit >= 48 && digit <= 57) {
+		return TRUE;
+	}
+
+	digit = chrToUpper(digit);
+
+	//look for A-F
+	if (digit >= 65 && digit <= 70) {
+		return TRUE;
+	}
+
+	return FALSE;
 }

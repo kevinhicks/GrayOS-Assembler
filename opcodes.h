@@ -84,7 +84,7 @@
 #define OP_SIZE_32	32
 
 int* findOpcodeByOperands(INSTRUCTION ins);
-int countOpcodeBytes(ASSEMBLECONTEXT* context, int* opcodeEntry);
+int countOpcodeBytes();
 
 int areCompatiableTypes(int availableOperand, int providedOperand);
 #endif /* OPCODES_H_ */

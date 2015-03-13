@@ -8,6 +8,7 @@
 #include "ctype.h"
 #include "stdlib.h"
 
+#include "globals.h"
 #include "stdio.h"
 #include "parser.h"
 #include "constants.h"
@@ -67,16 +68,16 @@ INSTRUCTION instruction;
 
  readIdent(context);
 
- int ins = findInstruction(context->tokenBuffer);
+ int ins = findInstruction(context.tokenBuffer);
 
  printf("Instruction: ");
  if (ins == OP_NOT_FOUND) {
- printf("UNKNOWN %s\n", context->tokenBuffer);
+ printf("UNKNOWN %s\n", context.tokenBuffer);
  skipLine(context);
  return;
  }
 
- printf("%s\n", context->tokenBuffer);
+ printf("%s\n", context.tokenBuffer);
 
  instruction.ins = ins;
 
@@ -85,12 +86,12 @@ INSTRUCTION instruction;
  //parse up to 3 params
  for (param = 0; param < 3; param++) {
 
- if (context->lookAhead == '\n' || context->lookAhead == EOF) {
+ if (context.lookAhead == '\n' || context.lookAhead == EOF) {
  break;
  }
 
  if (param > 0) {
- if (context->lookAhead == ',') {
+ if (context.lookAhead == ',') {
  readChar(context); //Eat comma
  skipWhitespace(context);
  } else {
@@ -101,21 +102,21 @@ INSTRUCTION instruction;
  //Something exists after the instruction
  char op1Buffer[MAX_TOKEN_SIZE];
 
- if (isdigit(context->lookAhead)) {
+ if (isdigit(context.lookAhead)) {
  //A Number
  readNumber(context);
- instruction.op[param] = classifyNumber(context->tokenBuffer);
- } else if (isalpha(context->lookAhead) || context->lookAhead == '_') {
+ instruction.op[param] = classifyNumber(context.tokenBuffer);
+ } else if (isalpha(context.lookAhead) || context.lookAhead == '_') {
  //A DEFINE name
  readIdent(context);
- } else if (context->lookAhead == '[') {
+ } else if (context.lookAhead == '[') {
  //A Memory Address Operand
  //These are denoted by square brackets
  readChar(context); //Eat '['
  skipWhitespace(context);
 
  //A memory address can contain a number, or a identifier
- if (isdigit(context->lookAhead)) {
+ if (isdigit(context.lookAhead)) {
  readNumber(context);
  } else {
  readIdent(context);
@@ -133,16 +134,16 @@ INSTRUCTION instruction;
  }
  */
 
-//Populate the context->currFile->insDec with the information about this instruction
-void doInstruction(ASSEMBLECONTEXT* context, int phase) {
+//Populate the context.currFile->insDec with the information about this instruction
+void doInstruction() {
 
 
-	int ins = findInstruction(context->currFile->tokenBuffer);
+	int ins = findInstruction(context.currFile->tokenBuffer);
 
 	printf("Instruction: ");
 	if (ins != INS_NOT_FOUND) {
 
-		printf("%s ", context->currFile->tokenBuffer);
+		printf("%s ", context.currFile->tokenBuffer);
 
 		instruction.ins = ins;
 
@@ -151,59 +152,60 @@ void doInstruction(ASSEMBLECONTEXT* context, int phase) {
 		//parse up to 3 params
 		for (param = 0; param < 3; param++) {
 
-			if (context->currFile->lookAhead == '\0') {
+			if (context.currFile->lookAhead == '\0') {
 				break;
 			}
 
 
 			if (param > 0) {
-				if (context->currFile->lookAhead == ',') {
-					readChar(context); //Eat comma
-					skipWhitespace(context);
+				if (context.currFile->lookAhead == ',') {
+					readChar(); //Eat comma
+					skipWhitespace();
 				} else {
-					expect(context, "',' or newline");
+					expect("',' or newline");
 				}
 			}
 
 			//Something exists after the instruction
 			//char op1Buffer[MAX_TOKEN_SIZE];
 
-			if (isdigit(context->currFile->lookAhead)) {
+			if (isdigit(context.currFile->lookAhead)) {
 				//A Number
-				readNumber(context);
-				instruction.op[param] = classifyNumber(context->currFile->tokenBuffer);
-			} else if (isalpha(context->currFile->lookAhead) || context->currFile->lookAhead == '_') {
+				readNumber();
+				instruction.op[param] = classifyNumber(context.currFile->tokenBuffer);
+			} else if (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
 				//A DEFINE name
-				readIdent(context);
-			} else if (context->currFile->lookAhead == '[') {
+				readIdent();
+			} else if (context.currFile->lookAhead == '[') {
 				//A Memory Address Operand
 				//These are denoted by square brackets
-				readChar(context); //Eat '['
-				skipWhitespace(context);
+				readChar(); //Eat '['
+				skipWhitespace();
 
 				//A memory address can contain a number, or a identifier
-				if (isdigit(context->currFile->lookAhead)) {
-					readNumber(context);
+				if (isdigit(context.currFile->lookAhead)) {
+					readNumber();
 				} else {
-					readIdent(context);
+					readIdent();
 				}
 
-				readChar(context); //eat ']'
+				readChar(); //eat ']'
 			}
 
-			skipWhitespace(context);
+			skipWhitespace();
 		}
 
 		//Now try to match what we found to an entry in our table
-		return findOpcodeByOperands(instruction);
-
-		context->currFile->insDesc->ins = OP_NOT_FOUND;
+		context.currFile->insDesc->ins = OP_NOT_FOUND;
+		context.currFile->insDesc->opTableEntry = findOpcodeByOperands(instruction);
+		return;
 
 	} else {
-		printf("UNKNOWN INSTRUCTION %s\n", context->currFile->tokenBuffer);
+		printf("UNKNOWN INSTRUCTION %s\n", context.currFile->tokenBuffer);
 	}
 
-	context->currFile->insDesc->ins = OP_NOT_FOUND;
+	context.currFile->insDesc->ins = OP_NOT_FOUND;
+	context.currFile->insDesc->opTableEntry = NULL;
 }
 
 int findInstruction(char* word) {

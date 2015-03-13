@@ -7,6 +7,8 @@
 
 #include "string.h"
 #include "stdio.h"
+
+#include "globals.h"
 #include "utils.h"
 #include "opcodes.h"
 #include "constants.h"
@@ -199,8 +201,9 @@ int* findOpcodeByOperands(INSTRUCTION ins) {
 	return (int*) OP_NOT_FOUND;
 }
 
-int countOpcodeBytes(ASSEMBLECONTEXT* context, int* opcodeEntry) {
+int countOpcodeBytes() {
 	int count = 0;
+	int* opcodeEntry = context.currFile->insDesc->opTableEntry;
 
 	//Find the number of opcodes this instruction will use
 	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1

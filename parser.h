@@ -15,21 +15,21 @@
 char chrLookAhead;
 int insideQuotes;
 
-void init(ASSEMBLECONTEXT* assembleContext);
+void init();
 
-char* readIdent(ASSEMBLECONTEXT* context);
-char readChar(ASSEMBLECONTEXT* context);
-char* readLine(ASSEMBLECONTEXT* context);
-char* readNumber(ASSEMBLECONTEXT* context);
+char* readIdent();
+char readChar();
+char* readLine();
+char* readNumber();
 
-void skipWhitespace(ASSEMBLECONTEXT* context);
-void skipWhitespaceLines(ASSEMBLECONTEXT* context);
-void skipLine(ASSEMBLECONTEXT* context);
+void skipWhitespace();
+void skipWhitespaceLines();
+void skipLine();
 
-char prefetchChar(ASSEMBLECONTEXT* context);
-void expect(ASSEMBLECONTEXT* context, char* expected);
+char prefetchChar();
+void expect(char* expected);
 
-void readLineIntoBuffer(ASSEMBLECONTEXT* context);
-char readCharIntoBuffer(ASSEMBLECONTEXT* context);
+void readLineIntoBuffer();
+char readCharIntoBuffer();
 
 #endif /* PARSER_H_ */

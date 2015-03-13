@@ -11,7 +11,7 @@
 
 #include "assemble.h"
 
-extern ASSEMBLECONTEXT* context;
+extern ASSEMBLECONTEXT context;
 
 
 #endif /* GLOBALS_H_ */

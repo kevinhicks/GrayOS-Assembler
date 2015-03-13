@@ -16,6 +16,7 @@
 #include "directives.h"
 #include "instructions.h"
 #include "assemble.h"
+#include "utils.h"
 
 ASSEMBLECONTEXT context;
 
@@ -32,9 +33,9 @@ int main() {
 	context.outputFile = &outputFile;
 	context.listingFile = &listingFile;
 
-	beginAssembly(&context);
-	assembleFile(&context, inputFileName);
-	endAssembly(&context);
+	beginAssembly();
+	assembleFile(inputFileName);
+	endAssembly();
 
 	return 0;
 }

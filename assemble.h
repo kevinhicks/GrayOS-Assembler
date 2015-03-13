@@ -60,7 +60,7 @@ struct FILECONTEXT {
 	char lookAhead;						//A single char giving us a preveiw of whats ahead of the the current token in the lineBuffer.
 	int lookAheadPosition;				//The position in the lineBuffer that the lookAhead is at
 	char tokenBuffer[MAX_TOKEN_SIZE];	//The current token/identifier/number
-
+	int numberTokenValue;				//If the current token is a number, then this will hold its actual value
 	char lineBufferLookAhead;			//The look ahead character looking at the next character from the file
 	char lineBuffer[MAX_LINE_BUFFER_SIZE];	//The text of the line we are currently assembling
 
@@ -69,22 +69,22 @@ struct FILECONTEXT {
 };
 
 //Prepare for assembly
-void beginAssembly(ASSEMBLECONTEXT* context);
+void beginAssembly();
 //Finsih assembly. Close files, and cleanup
-void endAssembly(ASSEMBLECONTEXT* context);
+void endAssembly();
 
 //Assemble the file
-void assembleFile(ASSEMBLECONTEXT* assembleContext, char* fileName);
+void assembleFile(char* fileName);
 //Perform Pass0. Looking for Preprocessor directives
-void pass0(ASSEMBLECONTEXT* context);
+void pass0();
 //Perform Pass1. Counting instruction sizes, and collecting labels
-void pass1(ASSEMBLECONTEXT* context);
+void pass1();
 //Perform Pass2. Assemble instructions, output to output file & listing file
-void pass2(ASSEMBLECONTEXT* context);
+void pass2();
 
 //Print all the labels, and there positions to the listings file
-void emitLabelsToListing(ASSEMBLECONTEXT* context);
+void emitLabelsToListing();
 //Add a label to the Label Table
-void addLabel(ASSEMBLECONTEXT* context, char* labelName);
+void addLabel(char* labelName, int position);
 
 #endif /* ASSEMBLE_H_ */
