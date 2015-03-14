@@ -119,13 +119,17 @@ void pass0() {
 
 void pass1() {
 
+	//Point CurrFile to the Unified file
 	context.currFile->file = context.unifiedFile->file;
 
+	//reset Counters
 	context.currFile->lineNumber = 0;
 	context.currFile->charNumber = 1;
 	context.outputPos = 0;
 
+	//Start back at the beginning of the file
 	rewind(context.currFile->file);
+
 	//Prime pump
 	readCharIntoBuffer();
 	while (context.currFile->lineBufferLookAhead != EOF) {
@@ -140,36 +144,89 @@ void pass1() {
 			if (context.currFile->lookAhead == ':') {
 				//This is a label
 				addLabel(context.currFile->tokenBuffer, context.outputPos);
-			} else if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
+			} else if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
 				//Handle appropriate directives
+				int i =2;
+
 			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
 				//Try to assemble it
 				//context.outputPos +=
 
+				context.currFile->insDesc->byteArrayCount = 0;
 				doInstruction();
-				context.outputPos += countOpcodeBytes();
-
+				populateInstructionBytes();
+				context.outputPos += context.currFile->insDesc->byteArrayCount;
 			}
 
 		}
 		fprintf(context.interFile->file, "0x%08X  %s\n", pos, context.currFile->lineBuffer);
-		//Look For Define, or MACRO
 	}
 }
 
 void pass2() {
+
+	//Point CurrFile to the Intermediate file
+	context.currFile->file = context.interFile->file;
+
+	//reset Counters
+	context.currFile->lineNumber = 0;
+	context.currFile->charNumber = 1;
 	context.outputPos = 0;
 
+	//Start back at the beginning of the file
+	rewind(context.currFile->file);
+
+	//Prime pump
+	readCharIntoBuffer();
+	while (context.currFile->lineBufferLookAhead != EOF) {
+		readLineIntoBuffer();
+
+		context.currFile->insDesc->byteArrayCount = 0;
+
+		readNumber();	//This is the position in then binary our current instruction is reside at
+		context.outputPos = context.currFile->numberTokenValue;
+
+		//A non-empty line
+		if (context.currFile->lookAhead != '\0') {
+			//read the first instruction
+			readIdent();
+			if (context.currFile->lookAhead == ':') {
+				//This is a label
+				addLabel(context.currFile->tokenBuffer, context.outputPos);
+			} else if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
+				//Handle appropriate directives
+			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
+				doInstruction();			//Parse & Classify instruction
+				populateInstructionBytes();	//Store bytes in output buffer
+			}
+
+		}
+
+		//Listing
+		fprintf(context.listingFile->file, "0x%08X ", context.outputPos);					//The binary position
+		fprintf(context.listingFile->file, "%s\n", context.currFile->lineBuffer + 12); 		//source code, remove the line numbers
+
+		//If we have anything to add to the listing from the output buffer
+		if (context.currFile->insDesc->byteArrayCount > 0) {
+			fprintf(context.listingFile->file, "0x%08X   ", context.outputPos);					//The binary position
+
+			int outIndex = 0;
+			for (outIndex = 0; outIndex < context.currFile->insDesc->byteArrayCount; outIndex++) {
+				fprintf(context.listingFile->file, "%02X ", context.currFile->insDesc->byteArray[outIndex] & 0xFF);	//hex representation of binary output
+			}
+			fprintf(context.listingFile->file, "\n");
+		}
+	}
 	emitLabelsToListing();
 }
 
 void emitLabelsToListing() {
-	fprintf(context.listingFile->file, "LABELS:\n");
+	fprintf(context.listingFile->file, "\n\nLABELS:\n");
 
 	LABELTABLEENTRY* head = context.firstLabelEntry;
 
 	while (head != NULL) {
-		fprintf(context.listingFile->file, "%-10s %d\n", head->name, head->position);
+		fprintf(context.listingFile->file, "%-10s %08X\n", head->name, head->position);
 
 		head = head->nextEntry;
 	}
@@ -193,3 +250,4 @@ void addLabel(char* labelName, int position) {
 	tail->position = position;
 	tail->nextEntry = NULL;
 }
+

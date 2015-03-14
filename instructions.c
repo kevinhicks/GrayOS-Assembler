@@ -62,8 +62,59 @@ PARAMETER classifyNumber(char* buffer) {
 	return param;
 }
 
-INSTRUCTION instruction;
+void classifyWord(PARAMETER* param, char* buffer) {
+	char copyOfWord[MAX_TOKEN_SIZE];
+
+	strcpy(param->op, buffer);
+	//another copy. this one will be modifiyed for eaiser comparison
+	strcpy(copyOfWord, buffer);
+	strToUpper(copyOfWord);
+
+	//Register?
+
+	//Accumulator
+	if (!strcmp(copyOfWord, "AL")) {
+		param->opType = (OP_AL | OP_REG8 | OP_REG);
+	} else if (!strcmp(copyOfWord, "AH")) {
+		param->opType = (OP_AH | OP_REG8 | OP_REG);
+	} else if (!strcmp(copyOfWord, "AX")) {
+		param->opType = (OP_AX | OP_REG16 | OP_REG);
+	} else if (!strcmp(copyOfWord, "EAX")) {
+		param->opType = (OP_EAX | OP_REG32 | OP_REG);
+	}
+
+	//Other 8 bit registers
+	else if (!strcmp(copyOfWord, "BL") ||
+			!strcmp(copyOfWord, "BH") ||
+			!strcmp(copyOfWord, "CL") ||
+			!strcmp(copyOfWord, "CH") ||
+			!strcmp(copyOfWord, "DL") ||
+			!strcmp(copyOfWord, "DH")) {
+		param->opType = OP_REG8 | OP_REG;
+		param->opSize = 8;
+	}
+
+	//Other 16 bit registers
+	else if (!strcmp(copyOfWord, "AX") ||
+			!strcmp(copyOfWord, "BX") ||
+			!strcmp(copyOfWord, "CX") ||
+			!strcmp(copyOfWord, "DX")) {
+		param->opType = OP_REG16 | OP_REG;
+		param->opSize = 16;
+	}
+
+	//Other 32 bit registers
+	else if (!strcmp(copyOfWord, "EAX") ||
+			!strcmp(copyOfWord, "EBX") ||
+			!strcmp(copyOfWord, "ECX") ||
+			!strcmp(copyOfWord, "EDX")) {
+		param->opType = OP_REG32 | OP_REG;
+		param->opSize = 32;
+	}
+}
+
 /*
+INSTRUCTION instruction;
  void doInstruction(FILECONTEXT* context) {
 
  readIdent(context);
@@ -137,26 +188,29 @@ INSTRUCTION instruction;
 //Populate the context.currFile->insDec with the information about this instruction
 void doInstruction() {
 
-
 	int ins = findInstruction(context.currFile->tokenBuffer);
+
+
+	context.currFile->insDesc->byteArrayCount = 0;
 
 	printf("Instruction: ");
 	if (ins != INS_NOT_FOUND) {
 
 		printf("%s ", context.currFile->tokenBuffer);
 
-		instruction.ins = ins;
+		context.currFile->insDesc->ins = ins;
 
 		int param = 0;
 
 		//parse up to 3 params
 		for (param = 0; param < 3; param++) {
 
+			//Are we at the end of the line?
 			if (context.currFile->lookAhead == '\0') {
 				break;
 			}
 
-
+			//If we are not looking at the first iteration, then there shoudl be a comma here
 			if (param > 0) {
 				if (context.currFile->lookAhead == ',') {
 					readChar(); //Eat comma
@@ -166,16 +220,14 @@ void doInstruction() {
 				}
 			}
 
-			//Something exists after the instruction
-			//char op1Buffer[MAX_TOKEN_SIZE];
-
 			if (isdigit(context.currFile->lookAhead)) {
 				//A Number
 				readNumber();
-				instruction.op[param] = classifyNumber(context.currFile->tokenBuffer);
+				context.currFile->insDesc->op[param] = classifyNumber(context.currFile->tokenBuffer);
 			} else if (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
 				//A DEFINE name
 				readIdent();
+				classifyWord(&context.currFile->insDesc->op[param], context.currFile->tokenBuffer);
 			} else if (context.currFile->lookAhead == '[') {
 				//A Memory Address Operand
 				//These are denoted by square brackets
@@ -196,8 +248,7 @@ void doInstruction() {
 		}
 
 		//Now try to match what we found to an entry in our table
-		context.currFile->insDesc->ins = OP_NOT_FOUND;
-		context.currFile->insDesc->opTableEntry = findOpcodeByOperands(instruction);
+		context.currFile->insDesc->opTableEntry = findOpcodeByOperands();
 		return;
 
 	} else {

@@ -25,7 +25,11 @@ int opcodes[][9] = {
 		{ INS_AAM, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_AAS, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_ADC, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
-		{ INS_ADD, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
+
+		{ INS_ADD, 0x00, 0x00, 0x00, OP_REG8 | OP_MEM8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_ADD, 0x01, 0x00, 0x00, OP_REG16 | OP_MEM16, OP_REG16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_ADD, 0x01, 0x00, 0x00, OP_REG32 | OP_MEM32, OP_REG32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+
 		{ INS_AND, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_CALL, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_CBW, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
@@ -65,17 +69,16 @@ int opcodes[][9] = {
 		{ INS_LOOPNZ, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_LOOPZ, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 
-		{ INS_MOV, 0x88, 0x00, 0x00, OP_REG8 | OP_MEM8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT2, OP_FLAGS_NONE },
-		{ INS_MOV, 0x89, 0x00, 0x00, OP_REG16 | OP_MEM16, OP_REG16, OP_NONE, OP_FLAGS_OPCODE_COUNT2 | OP_FLAGS_16BIT, OP_FLAGS_NONE },
-		{ INS_MOV, 0x89, 0x00, 0x00, OP_REG32 | OP_MEM32, OP_REG32, OP_NONE, OP_FLAGS_OPCODE_COUNT2 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
-		{ INS_MOV, 0x8A, 0x00, 0x00, OP_REG8, OP_REG8 | OP_MEM8, OP_NONE, OP_FLAGS_OPCODE_COUNT2, OP_FLAGS_NONE },
-		{ INS_MOV, 0x8B, 0x00, 0x00, OP_REG16, OP_REG16 | OP_MEM16, OP_NONE, OP_FLAGS_OPCODE_COUNT2 | OP_FLAGS_16BIT, OP_FLAGS_NONE },
-		{ INS_MOV, 0x8B, 0x00, 0x00, OP_REG32, OP_REG32 | OP_MEM32, OP_NONE, OP_FLAGS_OPCODE_COUNT2 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
+		{ INS_MOV, 0x88, 0x00, 0x00, OP_REG8 | OP_MEM8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_MOV, 0x89, 0x00, 0x00, OP_REG16 | OP_MEM16, OP_REG16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_MOV, 0x89, 0x00, 0x00, OP_REG32 | OP_MEM32, OP_REG32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_MOV, 0x8A, 0x00, 0x00, OP_REG8, OP_REG8 | OP_MEM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_MOV, 0x8B, 0x00, 0x00, OP_REG16, OP_REG16 | OP_MEM16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_MOV, 0x8B, 0x00, 0x00, OP_REG32, OP_REG32 | OP_MEM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
 
 		{ INS_MOV, 0xB0, 0x00, 0x00, OP_REG8, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_ADD_REG, OP_FLAGS_NONE },
 		{ INS_MOV, 0xB8, 0x00, 0x00, OP_REG16, OP_IMM16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_ADD_REG | OP_FLAGS_16BIT, OP_FLAGS_NONE },
 		{ INS_MOV, 0xB8, 0x00, 0x00, OP_REG32, OP_IMM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_ADD_REG | OP_FLAGS_32BIT, OP_FLAGS_NONE },
-
 
 		{ INS_MOVSB, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_MOVSW, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
@@ -155,6 +158,17 @@ int opcodes[][9] = {
 		{ INS_NOT_FOUND, 0x00, 0x00, 0x00, OP_NONE, OP_NONE, OP_NONE, OP_FLAGS_NONE, OP_FLAGS_NONE }
 };
 
+char* registers[][3] = {
+		{ "AL", "AX", "EAX" },
+		{ "CL", "CX", "ECX" },
+		{ "DL", "DX", "EDX" },
+		{ "BL", "BX", "EBX" },
+		{ "AH", "SP", "SP" },
+		{ "CH", "BP", "BP" },
+		{ "DH", "SI", "SI" },
+		{ "BH", "DI", "DI" },
+};
+
 /*
  int opcodes[OPCODE_TABLE_SIZE][6] = { { INS_ADD, 0x00, OP_REG8, OP_REG8, 0 }, {
  INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 }, { INS_ADD, 0x02, OP_REG8, OP_REG8, 0 }, {
@@ -162,8 +176,10 @@ int opcodes[][9] = {
  OP_IMM16, 0 } };
  */
 
+char getModRMRegFromRegName(char* reg);
+
 //Find the correct version of an opcode by its parameters
-int* findOpcodeByOperands(INSTRUCTION ins) {
+int* findOpcodeByOperands() {
 
 	int index = 0;
 
@@ -172,20 +188,30 @@ int* findOpcodeByOperands(INSTRUCTION ins) {
 		int* entry = opcodes[index];
 
 		//If this entry is not for our instructions, then move on
-		if (entry[OPCODE_FLD_INS] != ins.ins)
+		if (entry[OPCODE_FLD_INS] != context.currFile->insDesc->ins)
 			continue;
 
 		//compare params
 		int param = 0;
 		int invalidParams = 0;
 		for (param = 0; param < 3; param++) {
-			if (entry[OPCODE_FLD_OPR1 + param] == OP_NONE) {
+
+			int availableOperand = entry[OPCODE_FLD_OPR1 + param];
+			int providedOperand = context.currFile->insDesc->op[param].opType;
+
+			if (availableOperand == OP_NONE) {
 				break;
 			}
 
-			if (!areCompatiableTypes(entry[OPCODE_FLD_OPR1 + param],
-					ins.op[param].opType) == FALSE) {
+			//If we didn't provide an operand  when one was required
+			if (availableOperand != OP_NONE && providedOperand == OP_NONE) {
 				invalidParams++;
+				break;
+			}
+			//Or if it is not of a compatible type
+			else if (!(availableOperand & providedOperand)) {
+				invalidParams++;
+				break;
 			}
 		}
 
@@ -201,42 +227,76 @@ int* findOpcodeByOperands(INSTRUCTION ins) {
 	return (int*) OP_NOT_FOUND;
 }
 
-int countOpcodeBytes() {
-	int count = 0;
-	int* opcodeEntry = context.currFile->insDesc->opTableEntry;
-
-	//Find the number of opcodes this instruction will use
-	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
-
-	count += opCount;
-
-	return count;
-}
-
 int areCompatiableTypes(int availableOperand, int providedOperand) {
 	//First check for a missing type/param
-	if (availableOperand != OP_NONE && providedOperand == OP_NONE) {
-		return FALSE;
+	if (availableOperand == OP_NONE && providedOperand == OP_NONE) {
+		return TRUE;
 	}
 
-	if (availableOperand == OP_IMM8) {
-		if (providedOperand == OP_IMM8) {
-			return TRUE;
+	return availableOperand & providedOperand;
+}
+
+void populateInstructionBytes() {
+	INSTRUCTION* ins = context.currFile->insDesc;
+	int* opcodeEntry = ins->opTableEntry;
+	ins->byteArrayCount = 0;
+
+	if (opcodeEntry == OP_NOT_FOUND) {
+		return;
+	}
+
+	//TODO Prefixes?
+
+	//Opcode(s)
+	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
+	ins->byteArrayCount += opCount;
+
+	int i = 0;
+	for (i = 0; i < opCount; i++) {
+		ins->byteArray[i] = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
+	}
+
+	//Modifier(s)
+	if (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM) {
+		char mod = 0;
+		char reg = 0;
+		char rm = 0;
+
+		//Are they both regs?
+		if ((opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) && (opcodeEntry[OPCODE_FLD_OPR2] & OP_REG_MASK)) {
+
+			reg = getModRMRegFromRegName(ins->op[0].op);
+			rm = getModRMRegFromRegName(ins->op[1].op) << 3;
+
+			mod = MODRM_REG_REG | reg | rm;
+		}/*
+		//Reg to other
+		else if (ins->op[0].opType & OP_REG_MASK) {
+			mod = ins->op[0].opType;
+		}
+		//other to Reg
+		else if (ins->op[1].opType & OP_REG_MASK) {
+			mod = ins->op[1].opType;
+		}*/
+
+		ins->byteArray[ins->byteArrayCount++] = mod;
+	}
+}
+
+char getModRMRegFromRegName(char* reg) {
+	char copy[MAX_TOKEN_SIZE];
+
+	strcpy(copy, reg);
+	strToUpper(copy);
+	int r, b;
+
+	for (r = 0; r < 7; r++) {
+		for (b = 0; b < 3; b++) {
+			if(!strcmp(copy, registers[r][b])) {
+				return r;
+			}
 		}
 	}
 
-	if (availableOperand == OP_IMM16) {
-		if (providedOperand == OP_IMM8 || providedOperand == OP_IMM16) {
-			return TRUE;
-		}
-	}
-
-	if (availableOperand == OP_IMM32) {
-		if (providedOperand == OP_IMM8 || providedOperand == OP_IMM16
-				|| providedOperand == OP_IMM32) {
-			return TRUE;
-		}
-	}
-
-	return FALSE;
+	return 0;
 }

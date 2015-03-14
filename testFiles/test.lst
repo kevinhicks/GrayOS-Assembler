@@ -1,3 +1,52 @@
+0x00000000 add al, ah
+0x00000000   00 E0 
+0x00000002 add ah, al
+0x00000002   00 C4 
+0x00000004 add eax, al ;should fail
+0x00000004 add eax, ecx
+0x00000004   01 C8 
+0x00000006 
+0x00000006 define test 100
+0x00000006 
+0x00000006 mov al, ah
+0x00000006   88 E0 
+0x00000008 mov al, [100]
+0x00000008   88 E0 
+0x0000000A mov al, bl
+0x0000000A   88 D8 
+0x0000000C mov al, 100
+0x0000000C mov al, 0x100
+0x0000000C mov al, 1
+0x0000000C mov al, begin
+0x0000000C mov al, [begin]
+0x0000000C 
+0x0000000C aaa
+0x0000000C   37 
+0x0000000D aaa
+0x0000000D   37 
+0x0000000E include 'test2.src'
+0x0000000E 
+0x0000000E begin:
+0x0000000E add al;
+0x0000000E mov
+0x0000000E sub ; this is a comment
+0x0000000E add al, al
+0x0000000E   00 C0 
+0x00000010 add al, al
+0x00000010   00 C0 
+0x00000012 add al , al
+0x00000012   00 C0 
+0x00000014 add al ,al
+0x00000014   00 C0 
+0x00000016 add 1,1
+0x00000016 add al, [100]
+0x00000016 add [100], al
+0x00000016   00 C0 
+0x00000018 end:
+
+
 LABELS:
-begin      14
-end        25
+begin      0000000E
+end        00000018
+begin      0000000E
+end        00000018

@@ -25,6 +25,16 @@
 #define OP_IMM8 	0x200
 #define OP_IMM16	0x400
 #define OP_IMM32 	0x800
+#define OP_AL		0x1000
+#define OP_AH		0x2000
+#define OP_AX		0x4000
+#define OP_EAX		0x8000
+
+#define OP_REG_MASK	(OP_REG | OP_REG8 | OP_REG16 | OP_REG32)
+#define OP_MEM_MASK	(OP_MEM | OP_MEM8 | OP_MEM16 | OP_MEM32)
+
+
+#define MODRM_REG_REG	0xC0
 
 //The columns in the opcode table
 #define OPCODE_FLD_INS	0	//Instruction
@@ -75,7 +85,6 @@
 #define OP_REG_SEL_ESI			6
 #define OP_REG_SEL_EDI			7
 
-
 //Mask used to find parts of the field
 #define OP_FLAGS_MASK_OPCODE_COUNT (OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_OPCODE_COUNT2 | OP_FLAGS_OPCODE_COUNT3)
 
@@ -83,8 +92,11 @@
 #define OP_SIZE_16	16
 #define OP_SIZE_32	32
 
-int* findOpcodeByOperands(INSTRUCTION ins);
+int* findOpcodeByOperands();
 int countOpcodeBytes();
 
 int areCompatiableTypes(int availableOperand, int providedOperand);
+
+void populateInstructionBytes();
+
 #endif /* OPCODES_H_ */

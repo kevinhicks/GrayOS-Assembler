@@ -43,6 +43,7 @@ int findDirective(char* ident, int phase) {
 
 	char copyOfToken[MAX_TOKEN_SIZE];
 	strcpy(copyOfToken, ident);
+	strToUpper(copyOfToken);
 
 	int index = 0;
 
@@ -53,12 +54,7 @@ int findDirective(char* ident, int phase) {
 		//Does the name match
 		if (strcmp(copyOfToken, directives[index]) == 0) {
 			//Is it for the correct phase
-			int phaseIndex = 0;
-			while (directivesTable[phaseIndex][0] != index && directivesTable[phaseIndex][0] != DRTV_NOT_FOUND) {
-				phaseIndex++;
-
-			}
-			if ((directivesTable[phaseIndex][1] & phase) > 0)
+			if ((directivesTable[index][1] & phase))
 				return index;
 		}
 		index++;

@@ -103,6 +103,11 @@ char* readNumber() {
 	int index = 0;
 	int radix = 10; //default to 10
 
+	if(!isdigit(context.currFile->lookAhead)) {
+		expect("Number");
+	}
+
+
 	//look for 0x or 0b (case insensitive) prefix
 	if (context.currFile->lookAhead == '0') {
 		readChar();

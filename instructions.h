@@ -146,6 +146,8 @@ typedef struct {
 	int* opTableEntry;	//Pointer to the entry in the opcode table that best matches this instruction
 	PARAMETER op[3];
 	int bits;
+	char byteArray[MAX_LINE_BUFFER_SIZE];	//Holds the bytes of output
+	int byteArrayCount;						//How many bytes are in the byteArray
 } INSTRUCTION;
 
 //void doInstruction(FILECONTEXT* context);
