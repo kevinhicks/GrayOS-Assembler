@@ -1,32 +1,10 @@
-0x00000000  add al, ah
-0x00000002  add ah, al
-0x00000004  add eax, al ;should fail
-0x00000004  add eax, ecx
-0x00000006  
-0x00000006  define test 100
-0x00000006  
-0x00000006  mov al, ah
-0x00000008  mov al, [100]
-0x0000000A  mov al, bl
-0x0000000C  mov al, 100
-0x0000000C  mov al, 0x100
-0x0000000C  mov al, 1
-0x0000000C  mov al, begin
-0x0000000C  mov al, [begin]
-0x0000000C  
-0x0000000C  aaa
-0x0000000D  aaa
-0x0000000E  include 'test2.src'
-0x0000000E  
-0x0000000E  begin:
-0x0000000E  add al;
-0x0000000E  mov
-0x0000000E  sub ; this is a comment
-0x0000000E  add al, al
-0x00000010  add al, al
-0x00000012  add al , al
-0x00000014  add al ,al
-0x00000016  add 1,1
-0x00000016  add al, [100]
-0x00000016  add [100], al
-0x00000018  end:
+0x00000100  start:
+0x00000100  
+0x00000100  add al, al
+0x00000102  middle add ah, ah
+0x00000104  add ah, ah
+0x00000106  end:
+0x00000106  
+0x00000106  vars: db 'hello',0
+0x0000010C  
+0x0000010C  eof

@@ -32,6 +32,7 @@ int findDirective(char* ident, int phase);
 void doDirective(int directive);
 void findAndDoDirective(FILECONTEXT* context);
 
+void doDeclareBytes();
 
 void doInclude();
 #endif /* DIRECTIVES_H_ */

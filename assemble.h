@@ -51,6 +51,10 @@ struct LABELTABLEENTRY {
 	int position;				//The location the label is located
 };
 
+#define CTX_BITS_16			16
+#define CTX_BITS_32			32
+#define CTX_BITS_DEFAULT	CTX_BITS_32
+
 //Entry in linked list of files
 struct FILECONTEXT {
 	FILE* file;							//The system reference to the file
@@ -63,6 +67,8 @@ struct FILECONTEXT {
 	int numberTokenValue;				//If the current token is a number, then this will hold its actual value
 	char lineBufferLookAhead;			//The look ahead character looking at the next character from the file
 	char lineBuffer[MAX_LINE_BUFFER_SIZE];	//The text of the line we are currently assembling
+
+	int bitMode;							//16, or 32 bit
 
 	INSTRUCTION* insDesc;
 	int inseideQuotes;

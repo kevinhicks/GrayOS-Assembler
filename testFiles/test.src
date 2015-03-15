@@ -1,32 +1,11 @@
-add al, ah
-add ah, al
-add eax, al ;should fail
-add eax, ecx
+base 100h
+start:
 
-define test 100
-
-mov al, ah
-mov al, [100]
-mov al, bl
-mov al, 100
-mov al, 0x100
-mov al, 1
-mov al, begin
-mov al, [begin]
-
-aaa
-aaa
-include 'test2.src'
-
-begin:
-add al;
-mov
-sub ; this is a comment
 add al, al
-add al, al
-add al , al
-add al ,al
-add 1,1
-add al, [100]
-add [100], al
+middle add ah, ah
+add ah, ah
 end:
+
+vars: db 'hello',0
+
+eof

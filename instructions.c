@@ -39,27 +39,20 @@ char instructions[][10] = {
 		//Terminator
 		"\0" };
 
-PARAMETER classifyNumber(char* buffer) {
-	PARAMETER param;
-
-	strcpy(&param.op[0], buffer);
-
-	int number = atoi(buffer);
+void classifyNumber(PARAMETER* param) {
+	int number = context.currFile->numberTokenValue;
+	param->numberValue = number;
 
 	if (number >> 8 == 0) {
-		param.opSize = OP_SIZE_8;
-		param.opType = OP_IMM8;
-	}
-
-	if (number >> 8 == 0) {
-		param.opSize = OP_SIZE_16;
-		param.opType = OP_IMM16;
+		param->opSize = OP_SIZE_8;
+		param->opType = OP_IMM8;
+	} else if (number >> 16 == 0) {
+		param->opSize = OP_SIZE_16;
+		param->opType = OP_IMM16;
 	} else {
-		param.opSize = OP_SIZE_32;
-		param.opType = OP_IMM32;
+		param->opSize = OP_SIZE_32;
+		param->opType = OP_IMM32;
 	}
-
-	return param;
 }
 
 void classifyWord(PARAMETER* param, char* buffer) {
@@ -113,78 +106,6 @@ void classifyWord(PARAMETER* param, char* buffer) {
 	}
 }
 
-/*
-INSTRUCTION instruction;
- void doInstruction(FILECONTEXT* context) {
-
- readIdent(context);
-
- int ins = findInstruction(context.tokenBuffer);
-
- printf("Instruction: ");
- if (ins == OP_NOT_FOUND) {
- printf("UNKNOWN %s\n", context.tokenBuffer);
- skipLine(context);
- return;
- }
-
- printf("%s\n", context.tokenBuffer);
-
- instruction.ins = ins;
-
- int param = 0;
-
- //parse up to 3 params
- for (param = 0; param < 3; param++) {
-
- if (context.lookAhead == '\n' || context.lookAhead == EOF) {
- break;
- }
-
- if (param > 0) {
- if (context.lookAhead == ',') {
- readChar(context); //Eat comma
- skipWhitespace(context);
- } else {
- expect(context, "',' or newline");
- }
- }
-
- //Something exists after the instruction
- char op1Buffer[MAX_TOKEN_SIZE];
-
- if (isdigit(context.lookAhead)) {
- //A Number
- readNumber(context);
- instruction.op[param] = classifyNumber(context.tokenBuffer);
- } else if (isalpha(context.lookAhead) || context.lookAhead == '_') {
- //A DEFINE name
- readIdent(context);
- } else if (context.lookAhead == '[') {
- //A Memory Address Operand
- //These are denoted by square brackets
- readChar(context); //Eat '['
- skipWhitespace(context);
-
- //A memory address can contain a number, or a identifier
- if (isdigit(context.lookAhead)) {
- readNumber(context);
- } else {
- readIdent(context);
- }
-
- readChar(context); //eat ']'
- }
-
- skipWhitespace(context);
- }
-
- //Now try to match what we found to an entry in our table
- findInstructionByOperands(instruction);
-
- }
- */
-
 //Populate the context.currFile->insDec with the information about this instruction
 void doInstruction() {
 
@@ -223,7 +144,7 @@ void doInstruction() {
 			if (isdigit(context.currFile->lookAhead)) {
 				//A Number
 				readNumber();
-				context.currFile->insDesc->op[param] = classifyNumber(context.currFile->tokenBuffer);
+				classifyNumber(&context.currFile->insDesc->op[param]);
 			} else if (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
 				//A DEFINE name
 				readIdent();

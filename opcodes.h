@@ -33,8 +33,9 @@
 #define OP_REG_MASK	(OP_REG | OP_REG8 | OP_REG16 | OP_REG32)
 #define OP_MEM_MASK	(OP_MEM | OP_MEM8 | OP_MEM16 | OP_MEM32)
 
-
 #define MODRM_REG_REG	0xC0
+
+#define OP_PREFIX_BIT_SIZE_SWITCH	0x66
 
 //The columns in the opcode table
 #define OPCODE_FLD_INS	0	//Instruction
@@ -55,7 +56,8 @@
 #define OP_FLAGS_16BIT			4	//instruction is for 16bit
 #define OP_FLAGS_32BIT			8	//instruction is for 32bit
 #define OP_FLAGS_MODRM			16	//instruction has the 1 mod r/m byte
-#define OP_FLAGS_ADD_REG		32	//instruction opcode includes register selector
+#define OP_FLAGS_MODRM_IMM		32	//uses a mod r/m bye with an immediate operand. e.g. Add bl, 10
+#define OP_FLAGS_ADD_REG		64	//instruction opcode includes register selector
 
 //3 bit register selector. Added to the opcode of some instructions like "mov al, imm8"
 #define OP_REG_SEL_AL			0

@@ -29,6 +29,15 @@ int opcodes[][9] = {
 		{ INS_ADD, 0x00, 0x00, 0x00, OP_REG8 | OP_MEM8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM, OP_FLAGS_NONE },
 		{ INS_ADD, 0x01, 0x00, 0x00, OP_REG16 | OP_MEM16, OP_REG16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
 		{ INS_ADD, 0x01, 0x00, 0x00, OP_REG32 | OP_MEM32, OP_REG32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
+		{ INS_ADD, 0x04, 0x00, 0x00, OP_AL, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
+		/*{ INS_ADD, 0x05, 0x00, 0x00, OP_AX, OP_IMM8 | OP_IMM16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT, OP_FLAGS_NONE },
+		{ INS_ADD, 0x05, 0x00, 0x00, OP_EAX, OP_IMM8 | OP_IMM16 | OP_IMM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
+*/
+		{ INS_ADD, 0x80, 0x00, 0x00, OP_REG8, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM, OP_FLAGS_NONE },
+		{ INS_ADD, 0x83, 0x00, 0x00, OP_REG16, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_16BIT, OP_FLAGS_NONE },
+		{ INS_ADD, 0x83, 0x00, 0x00, OP_REG32, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_32BIT, OP_FLAGS_NONE },
+		{ INS_ADD, 0x81, 0x00, 0x00, OP_REG16, OP_IMM16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_16BIT, OP_FLAGS_NONE },
+		{ INS_ADD, 0x81, 0x00, 0x00, OP_REG32, OP_IMM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_32BIT, OP_FLAGS_NONE },
 
 		{ INS_AND, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_CALL, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
@@ -245,15 +254,25 @@ void populateInstructionBytes() {
 		return;
 	}
 
-	//TODO Prefixes?
+	//Prefixes
+	if (((opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_16BIT) && context.currFile->bitMode == CTX_BITS_32) ||
+			((opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_32BIT) && context.currFile->bitMode == CTX_BITS_16)) {
+		ins->byteArray[ins->byteArrayCount++] = OP_PREFIX_BIT_SIZE_SWITCH;
+	}
 
 	//Opcode(s)
-	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
-	ins->byteArrayCount += opCount;
-
 	int i = 0;
+	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
 	for (i = 0; i < opCount; i++) {
-		ins->byteArray[i] = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
+
+		//Do we add the register to the opcode?
+		if (i == 0 && (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_ADD_REG)) {
+			int opc = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
+			opc += getModRMRegFromRegName(ins->op[0].op);
+			ins->byteArray[ins->byteArrayCount++] = opc;
+		} else {
+			ins->byteArray[ins->byteArrayCount++] = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
+		}
 	}
 
 	//Modifier(s)
@@ -265,8 +284,8 @@ void populateInstructionBytes() {
 		//Are they both regs?
 		if ((opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) && (opcodeEntry[OPCODE_FLD_OPR2] & OP_REG_MASK)) {
 
-			reg = getModRMRegFromRegName(ins->op[0].op);
-			rm = getModRMRegFromRegName(ins->op[1].op) << 3;
+			rm = getModRMRegFromRegName(ins->op[0].op);
+			reg = getModRMRegFromRegName(ins->op[1].op) << 3;
 
 			mod = MODRM_REG_REG | reg | rm;
 		}/*
@@ -280,6 +299,34 @@ void populateInstructionBytes() {
 		}*/
 
 		ins->byteArray[ins->byteArrayCount++] = mod;
+	} else if (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM_IMM) { //MOD R/M for an instruction with an imediate operand is handled slightly different
+		int reg = opcodeEntry[OPCODE_FLD_OPC2];
+		int mod, rm;
+
+		if(opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) {
+			mod = MODRM_REG_REG;
+		}
+
+		rm = getModRMRegFromRegName(ins->op[0].op);
+
+		mod = MODRM_REG_REG | reg | rm;
+		ins->byteArray[ins->byteArrayCount++] = mod;
+	}
+
+	//Immediate Values Operand 1
+	for (i = 0; i < 3; i++) {
+		int oper = opcodeEntry[OPCODE_FLD_OPR1 + i];
+		if (oper & OP_IMM32) {
+			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
+			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 8) & 0xFF);
+			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 16) & 0xFF);
+			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 24) & 0xFF);
+		} else if (oper & OP_IMM16) {
+			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
+			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 8) & 0xFF);
+		} else if (oper & OP_IMM8) {
+			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
+		}
 	}
 }
 
@@ -290,13 +337,13 @@ char getModRMRegFromRegName(char* reg) {
 	strToUpper(copy);
 	int r, b;
 
-	for (r = 0; r < 7; r++) {
+	for (r = 0; r < 8; r++) {
 		for (b = 0; b < 3; b++) {
-			if(!strcmp(copy, registers[r][b])) {
+			if (!strcmp(copy, registers[r][b])) {
 				return r;
 			}
 		}
 	}
 
-	return 0;
+	return -1;
 }

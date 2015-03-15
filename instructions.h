@@ -139,6 +139,7 @@ typedef struct {
 	int opSize;
 	int opSizeExplicitlySet;
 
+	int numberValue;
 } PARAMETER;
 
 typedef struct {

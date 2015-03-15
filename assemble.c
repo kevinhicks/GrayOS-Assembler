@@ -66,6 +66,7 @@ void assembleFile(char* fileName) {
 	newFileContext.lineNumber = 0;
 	newFileContext.charNumber = 1;
 	newFileContext.insDesc = &ins;
+	newFileContext.bitMode = CTX_BITS_DEFAULT;
 
 	//Point the new filesContexts parent to the previous file
 	newFileContext.parentFile = context.currFile;
@@ -136,28 +137,70 @@ void pass1() {
 		readLineIntoBuffer();
 
 		int pos = context.outputPos;
+		context.currFile->insDesc->byteArrayCount = 0;
+
+		startOfComparison:
 
 		//A non-empty line
 		if (context.currFile->lookAhead != '\0') {
 			//read the first label/instruction/macro etc
 			readIdent();
-			if (context.currFile->lookAhead == ':') {
-				//This is a label
-				addLabel(context.currFile->tokenBuffer, context.outputPos);
-			} else if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
+			if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
 				//Handle appropriate directives
-				int i =2;
+				int drtv = findDirective(context.currFile->tokenBuffer, DRTV_PHASE1);
+
+				switch (drtv) {
+					case DRTV_BASE:
+						readNumber();
+
+						context.outputPos = context.currFile->numberTokenValue;
+						continue;
+
+						break;
+					case DRTV_BITS:
+						readNumber();
+
+						int bits = context.currFile->numberTokenValue;
+						if (bits != 16 && bits != 32) {
+							expect("16 or 32 bits");
+						}
+
+						context.currFile->bitMode = bits;
+						break;
+					case DRTV_DB:
+						doDeclareBytes(1);
+						break;
+					case DRTV_DW:
+						doDeclareBytes(2);
+						break;
+					case DRTV_DD:
+						doDeclareBytes(4);
+						break;
+					case DRTV_DQ:
+						doDeclareBytes(8);
+						break;
+				}
 
 			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
 				//Try to assemble it
 				//context.outputPos +=
 
-				context.currFile->insDesc->byteArrayCount = 0;
 				doInstruction();
 				populateInstructionBytes();
-				context.outputPos += context.currFile->insDesc->byteArrayCount;
+			} else {
+
+				addLabel(context.currFile->tokenBuffer, context.outputPos);
+
+				//Optional Colon follows label
+				if (context.currFile->lookAhead == ':') {
+					readChar();
+					skipWhitespace();
+				}
+
+				goto startOfComparison;
 			}
 
+			context.outputPos += context.currFile->insDesc->byteArrayCount;
 		}
 		fprintf(context.interFile->file, "0x%08X  %s\n", pos, context.currFile->lineBuffer);
 	}
@@ -165,18 +208,18 @@ void pass1() {
 
 void pass2() {
 
-	//Point CurrFile to the Intermediate file
+//Point CurrFile to the Intermediate file
 	context.currFile->file = context.interFile->file;
 
-	//reset Counters
+//reset Counters
 	context.currFile->lineNumber = 0;
 	context.currFile->charNumber = 1;
 	context.outputPos = 0;
 
-	//Start back at the beginning of the file
+//Start back at the beginning of the file
 	rewind(context.currFile->file);
 
-	//Prime pump
+//Prime pump
 	readCharIntoBuffer();
 	while (context.currFile->lineBufferLookAhead != EOF) {
 		readLineIntoBuffer();
@@ -186,21 +229,61 @@ void pass2() {
 		readNumber();	//This is the position in then binary our current instruction is reside at
 		context.outputPos = context.currFile->numberTokenValue;
 
+		startOfComparison:
+
 		//A non-empty line
 		if (context.currFile->lookAhead != '\0') {
 			//read the first instruction
 			readIdent();
-			if (context.currFile->lookAhead == ':') {
-				//This is a label
-				addLabel(context.currFile->tokenBuffer, context.outputPos);
-			} else if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
+			if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
 				//Handle appropriate directives
+				int drtv = findDirective(context.currFile->tokenBuffer, DRTV_PHASE1);
+
+				switch (drtv) {
+					case DRTV_BITS:
+						readNumber();
+
+						int bits = context.currFile->numberTokenValue;
+						if (bits != 16 && bits != 32) {
+							expect("16 or 32 bits");
+						}
+
+						context.currFile->bitMode = bits;
+						break;
+					case DRTV_DB:
+						doDeclareBytes(1);
+						break;
+					case DRTV_DW:
+						doDeclareBytes(2);
+						break;
+					case DRTV_DD:
+						doDeclareBytes(4);
+						break;
+					case DRTV_DQ:
+						doDeclareBytes(8);
+						break;
+				}
+
 			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
 				doInstruction();			//Parse & Classify instruction
 				populateInstructionBytes();	//Store bytes in output buffer
+			} else {
+				//Optional Colon follows label
+				if (context.currFile->lookAhead == ':') {
+					readChar();
+					skipWhitespace();
+				}
+
+				goto startOfComparison;
 			}
 
 		}
+
+		//Output to executable
+		fwrite(context.currFile->insDesc->byteArray,
+				1,
+				context.currFile->insDesc->byteArrayCount,
+				context.outputFile->file);
 
 		//Listing
 		fprintf(context.listingFile->file, "0x%08X ", context.outputPos);					//The binary position
