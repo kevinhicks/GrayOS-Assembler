@@ -111,8 +111,8 @@ void doInstruction() {
 
 	int ins = findInstruction(context.currFile->tokenBuffer);
 
-
 	context.currFile->insDesc->byteArrayCount = 0;
+	context.foundForwardReference = FALSE;
 
 	printf("Instruction: ");
 	if (ins != INS_NOT_FOUND) {
@@ -141,6 +141,8 @@ void doInstruction() {
 				}
 			}
 
+			startOfComparison:
+
 			if (isdigit(context.currFile->lookAhead)) {
 				//A Number
 				readNumber();
@@ -148,7 +150,27 @@ void doInstruction() {
 			} else if (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
 				//A DEFINE name
 				readIdent();
-				classifyWord(&context.currFile->insDesc->op[param], context.currFile->tokenBuffer);
+				//A label?
+				if (labelExists(context.currFile->tokenBuffer)) {
+					//A label with a known position?
+					if (labelExistsAndPositionDefined(context.currFile->tokenBuffer)) {
+						 getPositionOfLabel(context.currFile->tokenBuffer);
+					}
+					//A forward reference?
+					else {
+						//Assume a worst case senerio
+
+						if (context.currFile->bitMode == 16) {
+							strcpy(context.currFile->tokenBuffer, "0xFFFF");
+						} else {
+							strcpy(context.currFile->tokenBuffer, "0xFFFFFFFF");
+						}
+					}
+
+					classifyNumber(&context.currFile->insDesc->op[param]);
+				} else {
+					classifyWord(&context.currFile->insDesc->op[param], context.currFile->tokenBuffer);
+				}
 			} else if (context.currFile->lookAhead == '[') {
 				//A Memory Address Operand
 				//These are denoted by square brackets

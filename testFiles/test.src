@@ -1,11 +1,6 @@
-base 100h
-start:
-
-add al, al
-middle add ah, ah
-add ah, ah
-end:
-
-vars: db 'hello',0
-
-eof
+L1
+mov 1+2*3,-(1+2)
+jmp L2
+mov 1+2*3,-(1+2)
+L2
+mov 3+3, 4+4

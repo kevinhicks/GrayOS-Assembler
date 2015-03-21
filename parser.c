@@ -62,7 +62,7 @@ char* readIdent() {
 		expect("Letter or Underscore");
 	}
 
-	while (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
+	while (isalnum(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
 		context.currFile->tokenBuffer[index++] = context.currFile->lookAhead;
 		readChar(context);
 	}

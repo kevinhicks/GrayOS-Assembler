@@ -99,19 +99,15 @@ void pass0() {
 		readLineIntoBuffer();
 
 		if (context.currFile->lookAhead != '\0') {
+			readIdent();
 
-			/*
-			 readIdent(context);
-			 if (context.currFile->lookAhead == ':') {
-			 //THis is a label
-			 addLabel(context, context.currFile->tokenBuffer);
-			 }
-			 int directive = findDirective(context.currFile->tokenBuffer);
-
-			 if (directive != DRTV_NOT_FOUND) {
-			 doDirective(directive, context);
-			 }
-			 */
+			if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
+				//Process INCLUDE directives
+				//Store MACROs in our table
+			} else if (findInstruction(context.currFile->tokenBuffer) == INS_NOT_FOUND) {
+				//Add label names to our table
+				addLabelName(context.currFile->tokenBuffer, context.currFile->lineNumber);
+			}
 		}
 
 		fprintf(context.unifiedFile->file, "%s\n", context.currFile->lineBuffer);
@@ -133,8 +129,12 @@ void pass1() {
 
 	//Prime pump
 	readCharIntoBuffer();
+
 	while (context.currFile->lineBufferLookAhead != EOF) {
+
+		startOfLine:
 		readLineIntoBuffer();
+
 
 		int pos = context.outputPos;
 		context.currFile->insDesc->byteArrayCount = 0;
@@ -182,14 +182,10 @@ void pass1() {
 				}
 
 			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
-				//Try to assemble it
-				//context.outputPos +=
-
 				doInstruction();
 				populateInstructionBytes();
 			} else {
-
-				addLabel(context.currFile->tokenBuffer, context.outputPos);
+				setLabelPosition(context.currFile->tokenBuffer, context.outputPos);
 
 				//Optional Colon follows label
 				if (context.currFile->lookAhead == ':') {
@@ -208,18 +204,18 @@ void pass1() {
 
 void pass2() {
 
-//Point CurrFile to the Intermediate file
+	//Point CurrFile to the Intermediate file
 	context.currFile->file = context.interFile->file;
 
-//reset Counters
+	//reset Counters
 	context.currFile->lineNumber = 0;
 	context.currFile->charNumber = 1;
 	context.outputPos = 0;
 
-//Start back at the beginning of the file
+	//Start back at the beginning of the file
 	rewind(context.currFile->file);
 
-//Prime pump
+	//Prime pump
 	readCharIntoBuffer();
 	while (context.currFile->lineBufferLookAhead != EOF) {
 		readLineIntoBuffer();
@@ -302,35 +298,3 @@ void pass2() {
 	}
 	emitLabelsToListing();
 }
-
-void emitLabelsToListing() {
-	fprintf(context.listingFile->file, "\n\nLABELS:\n");
-
-	LABELTABLEENTRY* head = context.firstLabelEntry;
-
-	while (head != NULL) {
-		fprintf(context.listingFile->file, "%-10s %08X\n", head->name, head->position);
-
-		head = head->nextEntry;
-	}
-}
-
-void addLabel(char* labelName, int position) {
-	LABELTABLEENTRY* tail = context.firstLabelEntry;
-
-	if (tail == NULL) {
-		context.firstLabelEntry = malloc(sizeof(LABELTABLEENTRY));
-		tail = context.firstLabelEntry;
-	} else {
-		while (tail->nextEntry != NULL) {
-			tail = tail->nextEntry;
-		}
-		tail->nextEntry = malloc(sizeof(LABELTABLEENTRY));
-		tail = tail->nextEntry;
-	}
-
-	strcpy(tail->name, labelName);
-	tail->position = position;
-	tail->nextEntry = NULL;
-}
-

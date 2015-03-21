@@ -31,8 +31,8 @@ int opcodes[][9] = {
 		{ INS_ADD, 0x01, 0x00, 0x00, OP_REG32 | OP_MEM32, OP_REG32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT | OP_FLAGS_MODRM, OP_FLAGS_NONE },
 		{ INS_ADD, 0x04, 0x00, 0x00, OP_AL, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		/*{ INS_ADD, 0x05, 0x00, 0x00, OP_AX, OP_IMM8 | OP_IMM16, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT, OP_FLAGS_NONE },
-		{ INS_ADD, 0x05, 0x00, 0x00, OP_EAX, OP_IMM8 | OP_IMM16 | OP_IMM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
-*/
+		 { INS_ADD, 0x05, 0x00, 0x00, OP_EAX, OP_IMM8 | OP_IMM16 | OP_IMM32, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
+		 */
 		{ INS_ADD, 0x80, 0x00, 0x00, OP_REG8, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM, OP_FLAGS_NONE },
 		{ INS_ADD, 0x83, 0x00, 0x00, OP_REG16, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_16BIT, OP_FLAGS_NONE },
 		{ INS_ADD, 0x83, 0x00, 0x00, OP_REG32, OP_IMM8, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_MODRM_IMM | OP_FLAGS_32BIT, OP_FLAGS_NONE },
@@ -64,7 +64,10 @@ int opcodes[][9] = {
 		{ INS_INTO, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_IRET, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_JCXZ, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
-		{ INS_JMP, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
+
+		{ INS_JMP, 0x00, 0x00, 0x00, OP_IMM16, OP_NONE, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_16BIT, OP_FLAGS_NONE },
+		{ INS_JMP, 0x00, 0x00, 0x00, OP_IMM32, OP_NONE, OP_NONE, OP_FLAGS_OPCODE_COUNT1 | OP_FLAGS_32BIT, OP_FLAGS_NONE },
+
 		{ INS_LAHF, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_LDS, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
 		{ INS_LEA, 0x00, 0x00, 0x00, OP_REG8, OP_REG8, OP_NONE, OP_FLAGS_OPCODE_COUNT1, OP_FLAGS_NONE },
@@ -289,21 +292,21 @@ void populateInstructionBytes() {
 
 			mod = MODRM_REG_REG | reg | rm;
 		}/*
-		//Reg to other
-		else if (ins->op[0].opType & OP_REG_MASK) {
-			mod = ins->op[0].opType;
-		}
-		//other to Reg
-		else if (ins->op[1].opType & OP_REG_MASK) {
-			mod = ins->op[1].opType;
-		}*/
+		 //Reg to other
+		 else if (ins->op[0].opType & OP_REG_MASK) {
+		 mod = ins->op[0].opType;
+		 }
+		 //other to Reg
+		 else if (ins->op[1].opType & OP_REG_MASK) {
+		 mod = ins->op[1].opType;
+		 }*/
 
 		ins->byteArray[ins->byteArrayCount++] = mod;
 	} else if (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM_IMM) { //MOD R/M for an instruction with an imediate operand is handled slightly different
 		int reg = opcodeEntry[OPCODE_FLD_OPC2];
 		int mod, rm;
 
-		if(opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) {
+		if (opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) {
 			mod = MODRM_REG_REG;
 		}
 

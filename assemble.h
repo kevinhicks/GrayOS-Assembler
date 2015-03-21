@@ -12,10 +12,11 @@
 #include "stdio.h"
 #include "constants.h"
 #include "instructions.h"
+#include "utils.h"
+#include "labels.h"
 
 typedef struct MACROTABLEENTRY MACROTABLEENTRY;
 typedef struct ASSEMBLECONTEXT ASSEMBLECONTEXT;
-typedef struct LABELTABLEENTRY LABELTABLEENTRY;
 typedef struct FILECONTEXT FILECONTEXT;
 
 //The information about the entire assembling process
@@ -33,6 +34,7 @@ struct ASSEMBLECONTEXT {
 	LABELTABLEENTRY* firstLabelEntry;	//Points to the head of a linked list of labels
 
 	int outputPos;				//The position in the output binary
+	bool foundForwardReference;	//A boolean, set if we have found a forward reference. This signals the need for a new virtual block in pass 1
 };
 
 //Entry in linked list of Macros
@@ -42,14 +44,6 @@ struct MACROTABLEENTRY {
 	char* text;					//What the macro represents
 };
 
-//Entry in linked list of Labels
-struct LABELTABLEENTRY {
-	LABELTABLEENTRY* nextEntry;	//Points to the next entry in a linked list
-	int size;					//
-	char name[MAX_TOKEN_SIZE];					//The defined name of the label
-	int type;					//
-	int position;				//The location the label is located
-};
 
 #define CTX_BITS_16			16
 #define CTX_BITS_32			32
@@ -85,12 +79,9 @@ void assembleFile(char* fileName);
 void pass0();
 //Perform Pass1. Counting instruction sizes, and collecting labels
 void pass1();
+//During pass 1, we may break up the code into chuncks to better find the most effecient forms of reletive displacements
+void pass1_block();
 //Perform Pass2. Assemble instructions, output to output file & listing file
 void pass2();
-
-//Print all the labels, and there positions to the listings file
-void emitLabelsToListing();
-//Add a label to the Label Table
-void addLabel(char* labelName, int position);
 
 #endif /* ASSEMBLE_H_ */
