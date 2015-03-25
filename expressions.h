@@ -8,6 +8,14 @@
 #ifndef EXPRESSIONS_H_
 #define EXPRESSIONS_H_
 
+typedef struct {
+	int disp;
+	int base;
+	int scale;
+	int index;
+	int size;
+} MEMOPEXPRESSION;
+
 int expression();
 int getNumber();
 int term();

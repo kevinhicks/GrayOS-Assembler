@@ -15,6 +15,7 @@
 #include "instructions.h"
 #include "opcodes.h"
 #include "utils.h"
+#include "expressions.h"
 
 #include "string.h"
 
@@ -39,183 +40,231 @@ char instructions[][10] = {
 		//Terminator
 		"\0" };
 
-void classifyNumber(PARAMETER* param) {
-	int number = context.currFile->numberTokenValue;
-	param->numberValue = number;
+INSTRUCTION instruction;
 
-	if (number >> 8 == 0) {
-		param->opSize = OP_SIZE_8;
-		param->opType = OP_IMM8;
-	} else if (number >> 16 == 0) {
-		param->opSize = OP_SIZE_16;
-		param->opType = OP_IMM16;
+int inFilePos;
+int outFilePos;
+int lstFilePos;
+int preInsAddr;
+
+void memOpDisp(PARAMETER* param) {
+	if (param->memOpDesc & (MEMOP_DISP8 | MEMOP_DISP16)) {
+		printf("MemOp Disp must be grouped!\n");
+	}
+	param->memOpDisp = expression();
+
+	//Classify displacement
+	if (param->memOpDisp > 127 || param->memOpDisp < -128) {
+		param->memOpDesc |= MEMOP_DISP16;
 	} else {
-		param->opSize = OP_SIZE_32;
-		param->opType = OP_IMM32;
+		param->memOpDesc |= MEMOP_DISP8;
 	}
 }
+void memOpExpression(PARAMETER* param) {
 
-void classifyWord(PARAMETER* param, char* buffer) {
-	char copyOfWord[MAX_TOKEN_SIZE];
+	param->memOpDesc = 0;
+	param->memOpDisp = 0;
 
-	strcpy(param->op, buffer);
-	//another copy. this one will be modifiyed for eaiser comparison
-	strcpy(copyOfWord, buffer);
-	strToUpper(copyOfWord);
+	startOfEvaulation:
 
-	//Register?
+	//16 BIT MemOp
+	if (instruction.addressSize != 32) {
+		//Displacement
+		if (isdigit(tokens[currTokenIndex][0])) {
+			memOpDisp(param);
+			return;
+		}
+		//Base
+		else if (!strcmpi("bx", tokens[currTokenIndex])) {
+			if (param->memOpDesc & MEMOP_BX) {
+				printf("BX used more than once!\n");
+				exit(0);
+			} else if (param->memOpDesc & MEMOP_BP) {
+				printf("Two Base in MemOp!\n");
+				exit(0);
+			}
+			param->memOpDesc |= MEMOP_BX;
+			instruction.addressSize = 16;
+			currTokenIndex++;
 
-	//Accumulator
-	if (!strcmp(copyOfWord, "AL")) {
-		param->opType = (OP_AL | OP_REG8 | OP_REG);
-	} else if (!strcmp(copyOfWord, "AH")) {
-		param->opType = (OP_AH | OP_REG8 | OP_REG);
-	} else if (!strcmp(copyOfWord, "AX")) {
-		param->opType = (OP_AX | OP_REG16 | OP_REG);
-	} else if (!strcmp(copyOfWord, "EAX")) {
-		param->opType = (OP_EAX | OP_REG32 | OP_REG);
+		} else if (!strcmpi("bp", tokens[currTokenIndex])) {
+			if (param->memOpDesc & MEMOP_BP) {
+				printf("BP used more than once!\n");
+				exit(0);
+			} else if (param->memOpDesc & MEMOP_BX) {
+				printf("Two Base in MemOp!\n");
+				exit(0);
+			}
+			param->memOpDesc |= MEMOP_BP;
+			instruction.addressSize = 16;
+			currTokenIndex++;
+		}
+		//Index
+		else if (!strcmpi("di", tokens[currTokenIndex])) {
+			if (param->memOpDesc & MEMOP_DI) {
+				printf("DI used more than once!\n");
+				exit(0);
+			} else if (param->memOpDesc & MEMOP_SI) {
+				printf("Two Index in MemOp!\n");
+				exit(0);
+			}
+			param->memOpDesc |= MEMOP_DI;
+			instruction.addressSize = 16;
+			currTokenIndex++;
+
+		} else if (!strcmpi("si", tokens[currTokenIndex])) {
+			if (param->memOpDesc & MEMOP_SI) {
+				printf("SI used more than once!\n");
+				exit(0);
+			} else if (param->memOpDesc & MEMOP_DI) {
+				printf("Two Index in MemOp!\n");
+				exit(0);
+			}
+			param->memOpDesc |= MEMOP_SI;
+			instruction.addressSize = 16;
+			currTokenIndex++;
+		}
+
+		if (tokens[currTokenIndex][0] == '+') {
+			currTokenIndex++;
+			goto startOfEvaulation;
+		} else if (tokens[currTokenIndex][0] == '-') {
+			memOpDisp(param);
+			return;
+		}
+	}
+	//32 BIT MemOp
+	else {
+
 	}
 
-	//Other 8 bit registers
-	else if (!strcmp(copyOfWord, "BL") ||
-			!strcmp(copyOfWord, "BH") ||
-			!strcmp(copyOfWord, "CL") ||
-			!strcmp(copyOfWord, "CH") ||
-			!strcmp(copyOfWord, "DL") ||
-			!strcmp(copyOfWord, "DH")) {
-		param->opType = OP_REG8 | OP_REG;
-		param->opSize = 8;
-	}
-
-	//Other 16 bit registers
-	else if (!strcmp(copyOfWord, "AX") ||
-			!strcmp(copyOfWord, "BX") ||
-			!strcmp(copyOfWord, "CX") ||
-			!strcmp(copyOfWord, "DX")) {
-		param->opType = OP_REG16 | OP_REG;
-		param->opSize = 16;
-	}
-
-	//Other 32 bit registers
-	else if (!strcmp(copyOfWord, "EAX") ||
-			!strcmp(copyOfWord, "EBX") ||
-			!strcmp(copyOfWord, "ECX") ||
-			!strcmp(copyOfWord, "EDX")) {
-		param->opType = OP_REG32 | OP_REG;
-		param->opSize = 32;
-	}
 }
 
+void resetInstruction() {
+	instruction.byteArrayCount = 0;
+	instruction.addressSize = 0;
+	instruction.dataSize = 0;
+
+	//Clear params
+	int i = 0;
+	for (i = 0; i < 3; i++) {
+		instruction.parameters[i].memOpDesc = 0;
+		instruction.parameters[i].memOpDisp = 0;
+		instruction.parameters[i].numberValue = 0;
+		instruction.parameters[i].opSize = 0;
+		instruction.parameters[i].opSizeExplicitlySet = FALSE;
+		instruction.parameters[i].opType = 0;
+		instruction.parameters[i].reg = 0;
+		instruction.parameters[i].segmentPrefix = 0;
+	}
+}
 //Populate the context.currFile->insDec with the information about this instruction
 void doInstruction() {
 
-	int ins = findInstruction(context.currFile->tokenBuffer);
+	resetInstruction();
 
-	context.currFile->insDesc->byteArrayCount = 0;
+	instruction.ins = findInstruction(tokens[currTokenIndex]);
+
 	context.foundForwardReference = FALSE;
 
 	printf("Instruction: ");
-	if (ins != INS_NOT_FOUND) {
+	if (instruction.ins != INS_NOT_FOUND) {
 
-		printf("%s ", context.currFile->tokenBuffer);
-
-		context.currFile->insDesc->ins = ins;
+		printf("%s ", tokens[currTokenIndex++]);
 
 		int param = 0;
-
 		//parse up to 3 params
 		for (param = 0; param < 3; param++) {
 
 			//Are we at the end of the line?
-			if (context.currFile->lookAhead == '\0') {
-				break;
+			if (tokens[currTokenIndex][0] == '\0') {
+				instruction.parameters[param].opType = PARAM_NONE;
+				continue;
 			}
 
 			//If we are not looking at the first iteration, then there shoudl be a comma here
 			if (param > 0) {
-				if (context.currFile->lookAhead == ',') {
-					readChar(); //Eat comma
-					skipWhitespace();
-				} else {
+				//Eat comma
+				if (tokens[currTokenIndex][0] != ',') {
 					expect("',' or newline");
 				}
+				currTokenIndex++;
 			}
 
-			startOfComparison:
-
-			if (isdigit(context.currFile->lookAhead)) {
-				//A Number
-				readNumber();
-				classifyNumber(&context.currFile->insDesc->op[param]);
-			} else if (isalpha(context.currFile->lookAhead) || context.currFile->lookAhead == '_') {
-				//A DEFINE name
-				readIdent();
-				//A label?
-				if (labelExists(context.currFile->tokenBuffer)) {
-					//A label with a known position?
-					if (labelExistsAndPositionDefined(context.currFile->tokenBuffer)) {
-						 getPositionOfLabel(context.currFile->tokenBuffer);
-					}
-					//A forward reference?
-					else {
-						//Assume a worst case senerio
-
-						if (context.currFile->bitMode == 16) {
-							strcpy(context.currFile->tokenBuffer, "0xFFFF");
-						} else {
-							strcpy(context.currFile->tokenBuffer, "0xFFFFFFFF");
-						}
-					}
-
-					classifyNumber(&context.currFile->insDesc->op[param]);
-				} else {
-					classifyWord(&context.currFile->insDesc->op[param], context.currFile->tokenBuffer);
-				}
-			} else if (context.currFile->lookAhead == '[') {
-				//A Memory Address Operand
-				//These are denoted by square brackets
-				readChar(); //Eat '['
-				skipWhitespace();
-
-				//A memory address can contain a number, or a identifier
-				if (isdigit(context.currFile->lookAhead)) {
-					readNumber();
-				} else {
-					readIdent();
-				}
-
-				readChar(); //eat ']'
+			//mem op size specifyer
+			if (!strcmpi(tokens[currTokenIndex], "byte")) {
+				currTokenIndex++;
+				instruction.parameters[param].opSize = 8;
+			} else if (!strcmpi(tokens[currTokenIndex], "word")) {
+				currTokenIndex++;
+				instruction.parameters[param].opSize = 16;
+			} else if (!strcmpi(tokens[currTokenIndex], "dword")) {
+				currTokenIndex++;
+				instruction.parameters[param].opSize = 32;
 			}
 
-			skipWhitespace();
+			//MemOp
+			if (tokens[currTokenIndex][0] == '[') {
+				//Eat '['
+				currTokenIndex++;
+
+				instruction.parameters[param].opType = PARAM_MEM;
+
+				memOpExpression(&instruction.parameters[param]);
+
+				//Eat ']'
+				if (tokens[currTokenIndex][0] != ']') {
+					expect("]");
+				}
+
+				currTokenIndex++;
+
+				continue;
+			}
+
+			//REG
+			int r = isRegister(tokens[currTokenIndex]);
+			if (r >= 0) {
+				instruction.parameters[param].opType = PARAM_REG;
+				instruction.parameters[param].reg = r;
+
+				currTokenIndex++;
+
+				continue;
+			}
+
+			//Immediate
+			//if (isdigit(tokens[currTokenIndex][0])) {
+				instruction.parameters[param].opType = PARAM_IMM;
+				instruction.parameters[param].numberValue = expression();
+
+				currTokenIndex++;
+				continue;
+			//}
+
+			printf("Unknown operand\n");
+			exit(0);
 		}
 
 		//Now try to match what we found to an entry in our table
-		context.currFile->insDesc->opTableEntry = findOpcodeByOperands();
+		instruction.opTableEntry = findOpcodeByOperands();
 		return;
 
 	} else {
-		printf("UNKNOWN INSTRUCTION %s\n", context.currFile->tokenBuffer);
+		printf("UNKNOWN INSTRUCTION %s\n", tokens[currTokenIndex]);
 	}
 
-	context.currFile->insDesc->ins = OP_NOT_FOUND;
-	context.currFile->insDesc->opTableEntry = NULL;
+	instruction.ins = OP_NOT_FOUND;
+	instruction.opTableEntry = NULL;
 }
 
 int findInstruction(char* word) {
-	char cpyOfWord[MAX_WORD_SIZE];
-
-	//create a copy of the 'word',
-	//and upper-case it for later comparison
-	strcpy(cpyOfWord, word);
-	strToUpper(cpyOfWord);
-
 	int insIndex = 0;
 
 	//Loop thru listing of instructions, and see if we can fine this one
 	while (instructions[insIndex][0] != '\0') {
 		//If we find it, then return the index
-		if (strcmp(instructions[insIndex], cpyOfWord) == 0) {
+		if (!strcmpi(instructions[insIndex], word)) {
 			return insIndex;
 		}
 		insIndex++;

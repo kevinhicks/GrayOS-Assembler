@@ -17,56 +17,39 @@
 #include "directives.h"
 #include "instructions.h"
 #include "opcodes.h"
+#include "expressions.h"
 
-//Psuedocode
-//Pass 0
-//	Read each line of input file until EOF
-//	If line contains MACRO
-//		Read & store in lok up table
-//	rewind to start of input file
-//
-//Pass 1
-//	Read each line of input file until EOF
-//		If macro, expand.
-//		If variable, store in lookup table
-//		Count bytes of output
-//	Output to temp file
-//	rewind to start of input file
-//
-//Pass 2
-//	Read each line of temp file until EOF
-//		Assemble line
-//		output binary to output file
-//		output listing to l
+//Perform Pass1. Looking for Preprocessor directives
+void pass1();
+//Perform Pass2. Assemble instructions, output to output file & listing file
+void pass2();
+//During pass 2, we may break up the code into chuncks to better find the most effecient forms of reletive displacements
+int assembleBlock();
 
 void beginAssembly() {
 
 	context.unifiedFile->file = fopen("testFiles\\test.uni", "w+");
-	context.interFile->file = fopen("testFiles\\test.int", "w+");
 	context.listingFile->file = fopen("testFiles\\test.lst", "w+");
-	context.outputFile->file = fopen("testFiles\\test.out", "w+");
+	context.outputFile->file = fopen("testFiles\\test.out", "w+b");
 
 	context.firstLabelEntry = NULL;
 	context.firstMacroEntry = NULL;
 	context.fileDepth = 1;
+	context.bitMode = CTX_BITS_DEFAULT;
 }
 
 void endAssembly() {
 	fclose(context.unifiedFile->file);
-	fclose(context.interFile->file);
 	fclose(context.listingFile->file);
 	fclose(context.outputFile->file);
 }
 
 void assembleFile(char* fileName) {
 	FILECONTEXT newFileContext;
-	INSTRUCTION ins;
 
 	newFileContext.file = fopen(fileName, "r");
 	newFileContext.lineNumber = 0;
 	newFileContext.charNumber = 1;
-	newFileContext.insDesc = &ins;
-	newFileContext.bitMode = CTX_BITS_DEFAULT;
 
 	//Point the new filesContexts parent to the previous file
 	newFileContext.parentFile = context.currFile;
@@ -74,11 +57,8 @@ void assembleFile(char* fileName) {
 	//And set the newFileContext as the current file
 	context.currFile = &newFileContext;
 
-	printf("Pass 0\n");
-	pass0(); //Read & Store Macros, symbolic constants, and handle includes
-
 	printf("Pass 1\n");
-	pass1();	//Expand Macros & Count Instructions
+	pass1(); //Read & Store Macros, symbolic constants, and handle includes
 
 	printf("Pass 2\n");
 	pass2();	//Assemble & Output
@@ -91,30 +71,29 @@ void assembleFile(char* fileName) {
 	printf("Assemble Complete: %s\n", fileName);
 }
 
-void pass0() {
-
+void pass1() {
 	//Prime pump
 	readCharIntoBuffer();
-	while (context.currFile->lineBufferLookAhead != EOF) {
-		readLineIntoBuffer();
+	readLineIntoBuffer();
+	while (tokens[currTokenIndex][0] != '\0') {
 
-		if (context.currFile->lookAhead != '\0') {
-			readIdent();
+		if (findDirective(tokens[currTokenIndex], DRTV_ANY) != DRTV_NOT_FOUND) {
+			//Process INCLUDE directives
+			//Store MACROs in our table
+			currTokenIndex++;
+		} else if (findInstruction(tokens[currTokenIndex]) == INS_NOT_FOUND) {
 
-			if (findDirective(context.currFile->tokenBuffer, DRTV_ANY) != DRTV_NOT_FOUND) {
-				//Process INCLUDE directives
-				//Store MACROs in our table
-			} else if (findInstruction(context.currFile->tokenBuffer) == INS_NOT_FOUND) {
-				//Add label names to our table
-				addLabelName(context.currFile->tokenBuffer, context.currFile->lineNumber);
-			}
+			//Add label names to our table
+			addLabelName(tokens[currTokenIndex], 0);
 		}
 
 		fprintf(context.unifiedFile->file, "%s\n", context.currFile->lineBuffer);
+
+		readLineIntoBuffer();
 	}
 }
 
-void pass1() {
+void pass2() {
 
 	//Point CurrFile to the Unified file
 	context.currFile->file = context.unifiedFile->file;
@@ -124,177 +103,168 @@ void pass1() {
 	context.currFile->charNumber = 1;
 	context.outputPos = 0;
 
+	inFilePos = 0;
+	outFilePos = 0;
+	lstFilePos = 0;
+	preInsAddr = 0;
+
 	//Start back at the beginning of the file
 	rewind(context.currFile->file);
 
 	//Prime pump
 	readCharIntoBuffer();
 
-	while (context.currFile->lineBufferLookAhead != EOF) {
+	assembleBlock();
 
-		startOfLine:
-		readLineIntoBuffer();
+	//make sure the listing file's write pointer is at the end
+	fseek(context.listingFile->file, 0, SEEK_END);
 
+	emitLabelsToListing();
+}
 
-		int pos = context.outputPos;
-		context.currFile->insDesc->byteArrayCount = 0;
+void assembleLine() {
+	currTokenIndex = 0;
+	startOfComparison:
 
-		startOfComparison:
+	//read the first label/instruction/macro etc
+	if (findDirective(tokens[currTokenIndex], DRTV_PHASE1) != DRTV_NOT_FOUND) {
+		//Handle appropriate directives
+		int drtv = findDirective(tokens[currTokenIndex++], DRTV_PHASE1);
 
-		//A non-empty line
-		if (context.currFile->lookAhead != '\0') {
-			//read the first label/instruction/macro etc
-			readIdent();
-			if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
-				//Handle appropriate directives
-				int drtv = findDirective(context.currFile->tokenBuffer, DRTV_PHASE1);
+		switch (drtv) {
+			case DRTV_BASE:
 
-				switch (drtv) {
-					case DRTV_BASE:
-						readNumber();
+				context.outputPos = atol(tokens[currTokenIndex++]);
 
-						context.outputPos = context.currFile->numberTokenValue;
-						continue;
+				break;
+			case DRTV_BITS:
+				/*
+				 int bits = atol(tokens[currTokenIndex++]);
+				 if (bits != 16 && bits != 32) {
+				 expect("16 or 32 bits");
+				 }
 
-						break;
-					case DRTV_BITS:
-						readNumber();
-
-						int bits = context.currFile->numberTokenValue;
-						if (bits != 16 && bits != 32) {
-							expect("16 or 32 bits");
-						}
-
-						context.currFile->bitMode = bits;
-						break;
-					case DRTV_DB:
-						doDeclareBytes(1);
-						break;
-					case DRTV_DW:
-						doDeclareBytes(2);
-						break;
-					case DRTV_DD:
-						doDeclareBytes(4);
-						break;
-					case DRTV_DQ:
-						doDeclareBytes(8);
-						break;
-				}
-
-			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
-				doInstruction();
-				populateInstructionBytes();
-			} else {
-				setLabelPosition(context.currFile->tokenBuffer, context.outputPos);
-
-				//Optional Colon follows label
-				if (context.currFile->lookAhead == ':') {
-					readChar();
-					skipWhitespace();
-				}
-
-				goto startOfComparison;
-			}
-
-			context.outputPos += context.currFile->insDesc->byteArrayCount;
+				 context.currFile->bitMode = bits;
+				 break;
+				 */
+			case DRTV_DB:
+				doDeclareBytes(1);
+				break;
+			case DRTV_DW:
+				doDeclareBytes(2);
+				break;
+			case DRTV_DD:
+				doDeclareBytes(4);
+				break;
+			case DRTV_DQ:
+				doDeclareBytes(8);
+				break;
 		}
-		fprintf(context.interFile->file, "0x%08X  %s\n", pos, context.currFile->lineBuffer);
+
+	} else if (findInstruction(tokens[currTokenIndex]) != INS_NOT_FOUND) {
+		doInstruction();
+		populateInstructionBytes();
+	} else {
+		setLabelPosition(tokens[currTokenIndex], context.outputPos);
+		currTokenIndex++;
+
+		//Optional Colon follows label
+		if (tokens[currTokenIndex][0] == ':') {
+			currTokenIndex++;
+		}
+
+		//Something after label
+		if (tokens[currTokenIndex][0] != '\0') {
+			currTokenIndex++;
+			goto startOfComparison;
+		}
 	}
 }
 
-void pass2() {
+void outputLine(int toOutFile, int toListingFile) {
 
-	//Point CurrFile to the Intermediate file
-	context.currFile->file = context.interFile->file;
-
-	//reset Counters
-	context.currFile->lineNumber = 0;
-	context.currFile->charNumber = 1;
-	context.outputPos = 0;
-
-	//Start back at the beginning of the file
-	rewind(context.currFile->file);
-
-	//Prime pump
-	readCharIntoBuffer();
-	while (context.currFile->lineBufferLookAhead != EOF) {
-		readLineIntoBuffer();
-
-		context.currFile->insDesc->byteArrayCount = 0;
-
-		readNumber();	//This is the position in then binary our current instruction is reside at
-		context.outputPos = context.currFile->numberTokenValue;
-
-		startOfComparison:
-
-		//A non-empty line
-		if (context.currFile->lookAhead != '\0') {
-			//read the first instruction
-			readIdent();
-			if (findDirective(context.currFile->tokenBuffer, DRTV_PHASE1) != DRTV_NOT_FOUND) {
-				//Handle appropriate directives
-				int drtv = findDirective(context.currFile->tokenBuffer, DRTV_PHASE1);
-
-				switch (drtv) {
-					case DRTV_BITS:
-						readNumber();
-
-						int bits = context.currFile->numberTokenValue;
-						if (bits != 16 && bits != 32) {
-							expect("16 or 32 bits");
-						}
-
-						context.currFile->bitMode = bits;
-						break;
-					case DRTV_DB:
-						doDeclareBytes(1);
-						break;
-					case DRTV_DW:
-						doDeclareBytes(2);
-						break;
-					case DRTV_DD:
-						doDeclareBytes(4);
-						break;
-					case DRTV_DQ:
-						doDeclareBytes(8);
-						break;
-				}
-
-			} else if (findInstruction(context.currFile->tokenBuffer) != INS_NOT_FOUND) {
-				doInstruction();			//Parse & Classify instruction
-				populateInstructionBytes();	//Store bytes in output buffer
-			} else {
-				//Optional Colon follows label
-				if (context.currFile->lookAhead == ':') {
-					readChar();
-					skipWhitespace();
-				}
-
-				goto startOfComparison;
-			}
-
-		}
-
+	if (toOutFile) {
 		//Output to executable
-		fwrite(context.currFile->insDesc->byteArray,
+		fwrite(instruction.byteArray,
 				1,
-				context.currFile->insDesc->byteArrayCount,
+				instruction.byteArrayCount,
 				context.outputFile->file);
 
-		//Listing
+	}
+
+	if (toListingFile) {
+		//Output to Listing
 		fprintf(context.listingFile->file, "0x%08X ", context.outputPos);					//The binary position
-		fprintf(context.listingFile->file, "%s\n", context.currFile->lineBuffer + 12); 		//source code, remove the line numbers
+		fprintf(context.listingFile->file, "%s\n", context.currFile->lineBuffer); 		//source code, remove the line numbers
 
 		//If we have anything to add to the listing from the output buffer
-		if (context.currFile->insDesc->byteArrayCount > 0) {
+		if (instruction.byteArrayCount > 0) {
 			fprintf(context.listingFile->file, "0x%08X   ", context.outputPos);					//The binary position
 
 			int outIndex = 0;
-			for (outIndex = 0; outIndex < context.currFile->insDesc->byteArrayCount; outIndex++) {
-				fprintf(context.listingFile->file, "%02X ", context.currFile->insDesc->byteArray[outIndex] & 0xFF);	//hex representation of binary output
+			for (outIndex = 0; outIndex < instruction.byteArrayCount; outIndex++) {
+				fprintf(context.listingFile->file, "%02X ", instruction.byteArray[outIndex] & 0xFF);	//hex representation of binary output
 			}
 			fprintf(context.listingFile->file, "\n");
 		}
+
+		//Add the current instruction bytes to the counter
+		context.outputPos += instruction.byteArrayCount;
 	}
-	emitLabelsToListing();
+}
+int assembleBlock() {
+
+	int tempInFilePos = ftell(context.currFile->file) - 1;
+	int tempOutFilePos = ftell(context.outputFile->file);
+	int tempLstFilePos = ftell(context.listingFile->file);
+	int tempPreInsAddr = context.outputPos;
+
+	readLineIntoBuffer();
+
+	while (tokens[currTokenIndex][0] != '\0') {
+		//inFilePos = ftell(context.currFile->file) - 1;
+		//outFilePos = ftell(context.outputFile->file);
+		//lstFilePos = ftell(context.listingFile->file);
+		//preInsAddr = context.outputPos;
+
+		instruction.byteArrayCount = 0;
+
+		assembleLine();
+
+		outputLine(TRUE, TRUE);
+
+		int byteCount = instruction.byteArrayCount;
+
+		if (forwardRefFound) {
+			forwardRefFound = FALSE;
+
+			printf("Context switch\n");
+			assembleBlock();
+
+			//move counters back
+			fseek(context.currFile->file, tempInFilePos, SEEK_SET);
+			fseek(context.outputFile->file, tempOutFilePos, SEEK_SET);
+			fseek(context.listingFile->file, tempLstFilePos, SEEK_SET);
+			context.outputPos = tempPreInsAddr;
+
+			readCharIntoBuffer();
+			readLineIntoBuffer();
+
+			assembleLine();
+
+			outputLine(TRUE, TRUE);
+
+			//If our attempt worked, the output, and return
+			if (instruction.byteArrayCount == byteCount) {
+				return 0;
+			}
+			//otherwise keep assembling
+
+		} else {
+
+			readLineIntoBuffer();
+		}
+	}
+
+	return 0;
 }

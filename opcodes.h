@@ -35,7 +35,8 @@
 
 #define MODRM_REG_REG	0xC0
 
-#define OP_PREFIX_BIT_SIZE_SWITCH	0x66
+#define OP_PREFIX_BIT_DATA_SIZE_SWITCH		0x66
+#define OP_PREFIX_BIT_ADDRESS_SIZE_SWITCH	0x67
 
 //The columns in the opcode table
 #define OPCODE_FLD_INS	0	//Instruction
@@ -97,7 +98,7 @@
 int* findOpcodeByOperands();
 int countOpcodeBytes();
 
-int areCompatiableTypes(int availableOperand, int providedOperand);
+int isRegister(char* regName);
 
 void populateInstructionBytes();
 

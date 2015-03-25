@@ -9,33 +9,34 @@
 #include "string.h"
 #include "ctype.h"
 #include "stddef.h"
+#include "stdlib.h"
 
 #include "globals.h"
 #include "expressions.h"
+#include "opcodes.h"
 
-forwardRefFound = FALSE;
+int forwardRefFound;
 
 int expression() {
 	int t = 0;
 
 	//Unary -/+
-	if (context.currFile->lookAhead == '-')
-			{
-		readChar();
+	if (tokens[currTokenIndex][0] == '-'){
+		currTokenIndex++;
 		t -= term();
 	} else {
 		t = term();
 	}
 
-	while (context.currFile->lookAhead == '-' || context.currFile->lookAhead == '+')
+	while (tokens[currTokenIndex][0] == '-' || tokens[currTokenIndex][0] == '+')
 	{
-		switch (context.currFile->lookAhead) {
+		switch (tokens[currTokenIndex][0]) {
 			case '+':
-				readChar();
+				currTokenIndex++;
 				t += term();
 				break;
 			case '-':
-				readChar();
+				currTokenIndex++;
 				t -= term();
 				break;
 			default:
@@ -48,16 +49,16 @@ int expression() {
 
 int term() {
 	int t = factor();
-	while (context.currFile->lookAhead == '*' || context.currFile->lookAhead == '/')
+	while (tokens[currTokenIndex][0] == '*' || tokens[currTokenIndex][0] == '/')
 	{
-		switch (context.currFile->lookAhead) {
+		switch (tokens[currTokenIndex][0]) {
 			case '*':
-				readChar();
+				currTokenIndex++;
 				t *= factor();
 				break;
 			case '/':
-				readChar();
-				t *= factor();
+				currTokenIndex++;
+				t /= factor();
 				break;
 			default:
 				expect("Mul op");
@@ -68,35 +69,37 @@ int term() {
 }
 
 int factor() {
-	if (isdigit(context.currFile->lookAhead)) {
-		int i = getNumber();
+	//Number
+	if (isdigit(tokens[currTokenIndex][0])) {
+		return strtol(tokens[currTokenIndex++], NULL, 0);
+	}
+	//Nested expression
+	else if (tokens[currTokenIndex][0] == '(') {
+		currTokenIndex++;
+		int i = expression();
+		currTokenIndex++;
 		return i;
-	} else if (context.currFile->lookAhead == '(') {
-		readChar();
-		return expression();
-		readChar();
-	} else {
-		readIdent();
-		if (labelExists(context.currFile->tokenBuffer)) {
-			if (labelExistsAndPositionDefined(context.currFile->tokenBuffer)) {
-				return getPositionOfLabel(context.currFile->tokenBuffer);
-			} else {
+	}
+	//Label
+	else {
+		if(isRegister(tokens[currTokenIndex]) >= 0){
+			printf("Register in expression!\n");
+			exit(0);
+		}
 
-				//Forward ref
-				printf("Forward Ref Found: %s\n", context.currFile->tokenBuffer);
+		if (labelExists(tokens[currTokenIndex])) {
+			if (labelExistsAndPositionDefined(tokens[currTokenIndex])) {
+				return getPositionOfLabel(tokens[currTokenIndex++]);
+			} else {
+				currTokenIndex++;
 				forwardRefFound = TRUE;
+				return 0;
 			}
 		} else {
+				expect("Factor");
 
-			//Forward ref
-			printf("Forward Ref Found: %s\n", context.currFile->tokenBuffer);
-			forwardRefFound = TRUE;
 		}
 	}
 	return 0;
 }
 
-int getNumber() {
-	readNumber();
-	return context.currFile->numberTokenValue;
-}

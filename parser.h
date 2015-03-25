@@ -21,6 +21,8 @@ char* readIdent();
 char readChar();
 char* readLine();
 char* readNumber();
+void prefetchToken();
+char* readToken();
 
 void skipWhitespace();
 void skipWhitespaceLines();
@@ -31,5 +33,10 @@ void expect(char* expected);
 
 void readLineIntoBuffer();
 char readCharIntoBuffer();
+
+void tokenizeString();
+
+extern char tokens[100][100];
+extern int currTokenIndex;
 
 #endif /* PARSER_H_ */

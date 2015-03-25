@@ -1,4 +1,21 @@
-define this ; this is used later
-define test_expression (A+B*C)
-
-mul ecx, ecx
+add al, 0xFF
+add ax, 0xFF
+add ax, 0xFFFF
+add eax, 0xFFFFFFFF
+add bl, 0xFF
+L2:
+add bx, 0xFF
+add bx, 0xFFFF
+add ebx, 0xFFFFFFFF
+add bx, 60
+add ebx, 60
+add cx, 40
+add ecx, 40
+add bx, L1
+add word [bp+di], ax
+add dword [bp+di], eax
+add dword [bp+si+10], ecx
+add dword [bp+si-10], ecx
+add dword [bp+si+6000], ebx
+add dword [bp+si-6000], ebx
+add eax, ebx

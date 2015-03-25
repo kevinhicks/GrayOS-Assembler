@@ -106,30 +106,28 @@ int findDirective(char* ident, int phase) {
  }
  */
 void doDeclareBytes(int size) {
-	INSTRUCTION* ins = context.currFile->insDesc;
 
 	startOfByte:
 
 	//a string
-	if (context.currFile->lookAhead == '\'') {
-		readChar();
-		while (context.currFile->lookAhead != '\'') {
-			if (context.currFile->lookAhead == '\0') {
+	if (tokens[currTokenIndex][0]== '\'') {
+		currTokenIndex++;
+		while (tokens[currTokenIndex][0] != '\'') {
+			if (tokens[currTokenIndex][0] == '\0') {
 				expect("'");
 			}
 
-			if (ins->byteArrayCount == 1024) {
+			if (instruction.byteArrayCount == 1024) {
 				expect("End of line");
 			}
 
-			ins->byteArray[ins->byteArrayCount++] = context.currFile->lookAhead;
+			instruction.byteArray[instruction.byteArrayCount++] = tokens[currTokenIndex][0];
 
-			readChar();
 		}
-		readChar(); //eat '
+//eat '
 	} else {
-		readNumber();
 
+/*
 		switch (size) {
 			case 1:
 				if (context.currFile->numberTokenValue > 0xFF) {
@@ -153,15 +151,15 @@ void doDeclareBytes(int size) {
 				ins->byteArray[ins->byteArrayCount++] = (context.currFile->numberTokenValue >> 24) & 0xFF;
 				break;
 
-		}
+		}*/
 	}
 
-	skipWhitespace();
+//	skipWhitespace();
 
-	if (context.currFile->lookAhead == ',') {
-		readChar(); //eat ,
-		skipWhitespace();
-
-		goto startOfByte;
-	}
+//	if (context.currFile->lookAhead == ',') {
+//		readChar(); //eat ,
+//		skipWhitespace();
+//
+//		goto startOfByte;
+//	}
 }

@@ -28,6 +28,8 @@ void setLabelPosition(char* labelName, int position) {
 		tail = tail->nextEntry;
 	}
 
+	emitLabelsToListing();
+
 	printf("Unknown Label: %s", labelName);
 	exit(0);
 }

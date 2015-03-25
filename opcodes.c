@@ -170,7 +170,7 @@ int opcodes[][9] = {
 		{ INS_NOT_FOUND, 0x00, 0x00, 0x00, OP_NONE, OP_NONE, OP_NONE, OP_FLAGS_NONE, OP_FLAGS_NONE }
 };
 
-char* registers[][3] = {
+char* registersModRM[][3] = {
 		{ "AL", "AX", "EAX" },
 		{ "CL", "CX", "ECX" },
 		{ "DL", "DX", "EDX" },
@@ -179,174 +179,365 @@ char* registers[][3] = {
 		{ "CH", "BP", "BP" },
 		{ "DH", "SI", "SI" },
 		{ "BH", "DI", "DI" },
+		{ "\0", "\0", "\0" }
 };
 
-/*
- int opcodes[OPCODE_TABLE_SIZE][6] = { { INS_ADD, 0x00, OP_REG8, OP_REG8, 0 }, {
- INS_ADD, 0x00, OP_MEM8, OP_REG8, 0 }, { INS_ADD, 0x02, OP_REG8, OP_REG8, 0 }, {
- INS_ADD, 0x02, OP_REG8, OP_MEM8, 0 }, { INS_ADD, 0x04, OP_IMM16,
- OP_IMM16, 0 } };
- */
+#define REG_AL		0
+#define REG_AH		1
+#define REG_AX		2
+#define REG_EAX		3
+#define REG_CL		4
+#define REG_CH		5
+#define REG_CX		6
+#define REG_ECX		7
+#define REG_DL		8
+#define REG_DH		9
+#define REG_DX		10
+#define REG_EDX		11
+#define REG_BL		12
+#define REG_BH		13
+#define REG_BX		14
+#define REG_EBX		15
+#define REG_SP		16
+#define REG_BP		17
+#define REG_SI		18
+#define REG_DI		19
+#define REG_ESP		20
+#define REG_EBP		21
+#define REG_ESI		22
+#define REG_EDI		23
+
+char* registers[] = {
+		"AL",
+		"AH",
+		"AX",
+		"EAX",
+		"CL",
+		"CH",
+		"CX",
+		"ECX",
+		"DL",
+		"DH",
+		"DX",
+		"EDX",
+		"BL",
+		"BH",
+		"BX",
+		"EBX",
+		"SP",
+		"BP",
+		"SI",
+		"DI",
+		"ESP",
+		"EBP",
+		"ESI",
+		"EDI",
+		"\0"
+};
 
 char getModRMRegFromRegName(char* reg);
+int areCompatiableTypes(int availableOperand, PARAMETER* providedOperand);
+int regSize(int index) {
+	switch (index) {
+		case REG_AL:
+			case REG_AH:
+			case REG_CL:
+			case REG_CH:
+			case REG_DL:
+			case REG_DH:
+			case REG_BL:
+			case REG_BH:
+			return 8;
+		case REG_AX:
+			case REG_CX:
+			case REG_DX:
+			case REG_BX:
+			case REG_SP:
+			case REG_BP:
+			case REG_SI:
+			case REG_DI:
+			return 16;
+		case REG_EAX:
+			case REG_ECX:
+			case REG_EDX:
+			case REG_EBX:
+			case REG_ESP:
+			case REG_EBP:
+			case REG_ESI:
+			case REG_EDI:
+			return 32;
+	}
+
+	return 0;
+}
+
+int modrm16[][8] = {
+		{ MEMOP_BX | MEMOP_SI, MEMOP_BX | MEMOP_DI, MEMOP_BP | MEMOP_SI, MEMOP_BP | MEMOP_DI, MEMOP_SI, MEMOP_DI, MEMOP_DISP16, MEMOP_BX },
+
+		{ MEMOP_BX | MEMOP_SI | MEMOP_DISP8, MEMOP_BX | MEMOP_DI | MEMOP_DISP8, MEMOP_BP | MEMOP_SI | MEMOP_DISP8, MEMOP_BP | MEMOP_DI | MEMOP_DISP8,
+		MEMOP_SI | MEMOP_DISP8, MEMOP_DI | MEMOP_DISP8, MEMOP_BP | MEMOP_DISP16, MEMOP_BX | MEMOP_DISP8 },
+
+		{ MEMOP_BX | MEMOP_SI | MEMOP_DISP16, MEMOP_BX | MEMOP_DI | MEMOP_DISP16, MEMOP_BP | MEMOP_SI | MEMOP_DISP16, MEMOP_BP | MEMOP_DI | MEMOP_DISP16,
+		MEMOP_SI | MEMOP_DISP16, MEMOP_DI | MEMOP_DISP16, MEMOP_BP | MEMOP_DISP16, MEMOP_BX | MEMOP_DISP16 }
+};
+
+unsigned char find16BitModRM(PARAMETER* param) {
+	int row = 0;
+	int col = 0;
+
+	//todo, fixup for bp. make it look like bp + 0
+
+	for (row = 0; row < 3; row++) {
+		for (col = 0; col < 8; col++) {
+			if ((param->memOpDesc & modrm16[row][col]) == param->memOpDesc) {
+				return (row << 6) + col;
+			}
+		}
+	}
+
+	return -1;
+}
 
 //Find the correct version of an opcode by its parameters
 int* findOpcodeByOperands() {
 
 	int index = 0;
 
-	//Loop thru the entire opcode table, looking for the best possible opcode
+//Loop thru the entire opcode table, looking for the best possible opcode
 	for (index = 0; opcodes[index][OPCODE_FLD_INS] != INS_NOT_FOUND; index++) {
 		int* entry = opcodes[index];
 
 		//If this entry is not for our instructions, then move on
-		if (entry[OPCODE_FLD_INS] != context.currFile->insDesc->ins)
+		if (entry[OPCODE_FLD_INS] != instruction.ins)
 			continue;
 
-		//compare params
+		//We have now found a matching instruction, we now need matching params
+
+		//Parameter index
 		int param = 0;
-		int invalidParams = 0;
+		//Watch for invalid parameters
+		int invalidParams = FALSE;
+
+		//Look at each parameter
 		for (param = 0; param < 3; param++) {
 
+			//Describes what this instruction entry EXPECTS
 			int availableOperand = entry[OPCODE_FLD_OPR1 + param];
-			int providedOperand = context.currFile->insDesc->op[param].opType;
 
-			if (availableOperand == OP_NONE) {
-				break;
-			}
-
-			//If we didn't provide an operand  when one was required
-			if (availableOperand != OP_NONE && providedOperand == OP_NONE) {
-				invalidParams++;
-				break;
-			}
-			//Or if it is not of a compatible type
-			else if (!(availableOperand & providedOperand)) {
-				invalidParams++;
+			//Compares, looking for a fit
+			if (!areCompatiableTypes(availableOperand, &instruction.parameters[param])) {
+				invalidParams = TRUE;
 				break;
 			}
 		}
 
-		if (invalidParams < 1) {
-			printf("FOUND A WINNER!\n");
+		//Did we find a workable entry?
+		if (!invalidParams) {
+			printf("found\n");
 			return entry;
 		}
-
 	}
 
-	//Did not find any workable entry
+//Did not find any workable entry
 	printf("Could not find an opcode to fit the params\n");
 	return (int*) OP_NOT_FOUND;
 }
 
-int areCompatiableTypes(int availableOperand, int providedOperand) {
+int areCompatiableTypes(int availableOperand, PARAMETER* providedOperand) {
 	//First check for a missing type/param
-	if (availableOperand == OP_NONE && providedOperand == OP_NONE) {
+	if (availableOperand == OP_NONE && providedOperand->opType == PARAM_NONE) {
 		return TRUE;
 	}
 
-	return availableOperand & providedOperand;
+	//Accumulator
+	if ((availableOperand & OP_AL) && providedOperand->opType == PARAM_REG && providedOperand->reg == REG_AL) {
+		return TRUE;
+	}
+
+	//General Purpose Registers
+	if ((availableOperand & OP_REG8) && providedOperand->opType == PARAM_REG && (regSize(providedOperand->reg) == 8)) {
+		return TRUE;
+	}
+
+	if ((availableOperand & OP_REG16) && providedOperand->opType == PARAM_REG && (regSize(providedOperand->reg) == 16)) {
+		return TRUE;
+	}
+
+	if ((availableOperand & OP_REG32) && providedOperand->opType == PARAM_REG && (regSize(providedOperand->reg) == 32)) {
+		return TRUE;
+	}
+
+	//Immediate types
+	if ((availableOperand & OP_IMM8) && providedOperand->opType == PARAM_IMM) {
+		if (providedOperand->numberValue <= 0xFF) {
+			return TRUE;
+		}
+	}
+
+	if ((availableOperand & OP_IMM16) && providedOperand->opType == PARAM_IMM) {
+		if (providedOperand->numberValue <= 0xFFFF) {
+			return TRUE;
+		}
+	}
+
+	if ((availableOperand & OP_IMM32) && providedOperand->opType == PARAM_IMM) {
+		if (providedOperand->numberValue <= 0xFFFFFFFF) {
+			return TRUE;
+		}
+	}
+
+	//Memory operands
+	if ((availableOperand & OP_MEM8) && providedOperand->opType == PARAM_MEM && (providedOperand->opSize == 8)) {
+		return TRUE;
+	}
+
+	if ((availableOperand & OP_MEM16) && providedOperand->opType == PARAM_MEM && (providedOperand->opSize == 16)) {
+		return TRUE;
+	}
+
+	if ((availableOperand & OP_MEM32) && providedOperand->opType == PARAM_MEM && (providedOperand->opSize == 32)) {
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 void populateInstructionBytes() {
-	INSTRUCTION* ins = context.currFile->insDesc;
-	int* opcodeEntry = ins->opTableEntry;
-	ins->byteArrayCount = 0;
+	//reset the byte counter
+	instruction.byteArrayCount = 0;
 
-	if (opcodeEntry == OP_NOT_FOUND) {
+	//If we never found a valid entry, then skip out now
+	if (instruction.opTableEntry == OP_NOT_FOUND) {
 		return;
 	}
 
 	//Prefixes
-	if (((opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_16BIT) && context.currFile->bitMode == CTX_BITS_32) ||
-			((opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_32BIT) && context.currFile->bitMode == CTX_BITS_16)) {
-		ins->byteArray[ins->byteArrayCount++] = OP_PREFIX_BIT_SIZE_SWITCH;
+	//Address Size
+	if ((instruction.addressSize == 16 && context.bitMode == 32) ||
+			(instruction.addressSize == 32 && context.bitMode == 16)) {
+		instruction.byteArray[instruction.byteArrayCount++] = OP_PREFIX_BIT_ADDRESS_SIZE_SWITCH;
+	}
+	//Data size
+	if (((instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_16BIT) && context.bitMode == CTX_BITS_32) ||
+			((instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_32BIT) && context.bitMode == CTX_BITS_16)) {
+		instruction.byteArray[instruction.byteArrayCount++] = OP_PREFIX_BIT_DATA_SIZE_SWITCH;
 	}
 
 	//Opcode(s)
 	int i = 0;
-	int opCount = (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
+	//How many opcodes make up the base of this instruction?
+	int opCount = (instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MASK_OPCODE_COUNT) + 1; //Zero based, so increment by 1
 	for (i = 0; i < opCount; i++) {
-
 		//Do we add the register to the opcode?
-		if (i == 0 && (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_ADD_REG)) {
-			int opc = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
-			opc += getModRMRegFromRegName(ins->op[0].op);
-			ins->byteArray[ins->byteArrayCount++] = opc;
+		if (i == 0 && (instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_ADD_REG)) {
+			int opc = (unsigned char) instruction.opTableEntry[OPCODE_FLD_OPC1 + i];
+			opc += getModRMRegFromRegName(registers[instruction.parameters[0].reg]);
+			instruction.byteArray[instruction.byteArrayCount++] = opc;
 		} else {
-			ins->byteArray[ins->byteArrayCount++] = (unsigned char) opcodeEntry[OPCODE_FLD_OPC1 + i];
+			instruction.byteArray[instruction.byteArrayCount++] = (unsigned char) instruction.opTableEntry[OPCODE_FLD_OPC1 + i];
 		}
 	}
 
 	//Modifier(s)
-	if (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM) {
+	if (instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM) {
 		char mod = 0;
 		char reg = 0;
 		char rm = 0;
 
 		//Are they both regs?
-		if ((opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) && (opcodeEntry[OPCODE_FLD_OPR2] & OP_REG_MASK)) {
+		if (instruction.parameters[0].opType == PARAM_REG && instruction.parameters[1].opType == PARAM_REG) {
 
-			rm = getModRMRegFromRegName(ins->op[0].op);
-			reg = getModRMRegFromRegName(ins->op[1].op) << 3;
+			rm = getModRMRegFromRegName(registers[instruction.parameters[0].reg]);
+			reg = getModRMRegFromRegName(registers[instruction.parameters[1].reg]) << 3;
 
 			mod = MODRM_REG_REG | reg | rm;
-		}/*
-		 //Reg to other
-		 else if (ins->op[0].opType & OP_REG_MASK) {
-		 mod = ins->op[0].opType;
-		 }
-		 //other to Reg
-		 else if (ins->op[1].opType & OP_REG_MASK) {
-		 mod = ins->op[1].opType;
-		 }*/
+		}
+		else {
+			//Reg first?
+			if (instruction.parameters[0].opType == PARAM_REG) {
+				reg = getModRMRegFromRegName(registers[instruction.parameters[0].reg]);
 
-		ins->byteArray[ins->byteArrayCount++] = mod;
-	} else if (opcodeEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM_IMM) { //MOD R/M for an instruction with an imediate operand is handled slightly different
-		int reg = opcodeEntry[OPCODE_FLD_OPC2];
+				//memop in second
+				mod = find16BitModRM(&instruction.parameters[1]);
+			}
+			//Reg second?
+			else {
+				reg = getModRMRegFromRegName(registers[instruction.parameters[1].reg]);
+
+				//memop in first
+				mod = find16BitModRM(&instruction.parameters[0]);
+			}
+
+			mod = mod | (reg << 3);
+		}
+
+		instruction.byteArray[instruction.byteArrayCount++] = mod;
+	}
+	//MOD R/M for an instruction with an immediate operand is handled slightly different
+	else if (instruction.opTableEntry[OPCODE_FLD_FLG1] & OP_FLAGS_MODRM_IMM) {
+		int reg = instruction.opTableEntry[OPCODE_FLD_OPC2];
 		int mod, rm;
 
-		if (opcodeEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) {
+		if (instruction.opTableEntry[OPCODE_FLD_OPR1] & OP_REG_MASK) {
 			mod = MODRM_REG_REG;
 		}
 
-		rm = getModRMRegFromRegName(ins->op[0].op);
+		rm = getModRMRegFromRegName(registers[instruction.parameters[0].reg]);
 
 		mod = MODRM_REG_REG | reg | rm;
-		ins->byteArray[ins->byteArrayCount++] = mod;
+		instruction.byteArray[instruction.byteArrayCount++] = mod;
 	}
 
-	//Immediate Values Operand 1
+	//Displacement
 	for (i = 0; i < 3; i++) {
-		int oper = opcodeEntry[OPCODE_FLD_OPR1 + i];
+		if (instruction.parameters[i].memOpDesc & MEMOP_DISP8) {
+			instruction.byteArray[instruction.byteArrayCount++] = ((char) instruction.parameters[i].memOpDisp);
+		} else if (instruction.parameters[i].memOpDesc & MEMOP_DISP16) {
+			instruction.byteArray[instruction.byteArrayCount++] = ((short) instruction.parameters[i].memOpDisp);
+			instruction.byteArray[instruction.byteArrayCount++] = ((short) (instruction.parameters[i].memOpDisp)) >> 8;
+		}
+	}
+
+	//Immediate Values Operand 1-3
+	for (i = 0; i < 3; i++) {
+		int oper = instruction.opTableEntry[OPCODE_FLD_OPR1 + i];
 		if (oper & OP_IMM32) {
-			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
-			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 8) & 0xFF);
-			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 16) & 0xFF);
-			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 24) & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = (instruction.parameters[i].numberValue & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = ((instruction.parameters[i].numberValue >> 8) & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = ((instruction.parameters[i].numberValue >> 16) & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = ((instruction.parameters[i].numberValue >> 24) & 0xFF);
 		} else if (oper & OP_IMM16) {
-			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
-			ins->byteArray[ins->byteArrayCount++] = ((ins->op[i].numberValue >> 8) & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = (instruction.parameters[i].numberValue & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = ((instruction.parameters[i].numberValue >> 8) & 0xFF);
 		} else if (oper & OP_IMM8) {
-			ins->byteArray[ins->byteArrayCount++] = (ins->op[i].numberValue & 0xFF);
+			instruction.byteArray[instruction.byteArrayCount++] = (instruction.parameters[i].numberValue & 0xFF);
 		}
 	}
 }
 
 char getModRMRegFromRegName(char* reg) {
-	char copy[MAX_TOKEN_SIZE];
-
-	strcpy(copy, reg);
-	strToUpper(copy);
 	int r, b;
 
 	for (r = 0; r < 8; r++) {
 		for (b = 0; b < 3; b++) {
-			if (!strcmp(copy, registers[r][b])) {
+			if (!strcmpi(reg, registersModRM[r][b])) {
 				return r;
 			}
 		}
 	}
 
+	return -1;
+}
+
+int isRegister(char* regName) {
+	int row = 0;
+
+//While the first char in the first column is not zero
+	while (registers[row][0] != '\0') {
+		if (!strcmpi(regName, registers[row])) {
+			return row;
+		}
+		row++;
+	}
 	return -1;
 }

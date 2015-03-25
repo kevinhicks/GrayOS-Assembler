@@ -1,0 +1,8 @@
+mov bl, L2
+mov bl, L1
+mov bl, L3
+L1:
+mov al, al
+L2:
+mov bh,bh
+L3

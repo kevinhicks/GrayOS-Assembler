@@ -1,6 +1,8 @@
-L1
-mov 1+2*3,-(1+2)
-jmp L2
-mov 1+2*3,-(1+2)
-L2
-mov 3+3, 4+4
+mov bl, L2
+mov bl, L1
+mov bl, L3
+L1:
+mov al, al
+L2:
+mov bh,bh
+L3

@@ -11,7 +11,6 @@
 #include "parser.h"
 #include "assemble.h"
 
-
 #define INS_NOT_FOUND	-1
 #define INS_AAA 		0
 #define INS_AAD 		1
@@ -132,33 +131,55 @@
 #define INS_JS 			116
 #define INS_JZ 			117
 
+//Types of Parameters
+#define PARAM_NONE		0x00
+#define PARAM_MEM		0x01
+#define PARAM_REG		0x02
+#define PARAM_IMM		0x04
 
+//Flags describing Operands
+#define MEMOP_DISP8		0x01
+#define MEMOP_DISP16	0x02
+#define MEMOP_BP		0x04
+#define MEMOP_BX		0x08
+#define MEMOP_DI		0x10
+#define MEMOP_SI		0x20
+
+//Describes a parameter from the source code
 typedef struct {
 	char op[MAX_TOKEN_SIZE];
-	int opType;
 	int opSize;
 	int opSizeExplicitlySet;
 
+	int opType;
+
 	int numberValue;
+
+	int memOpDesc;
+	int memOpDisp;
+
+	int reg;
+
+	int segmentPrefix;
 } PARAMETER;
 
+//Describes an instruction from the source code
 typedef struct {
 	int ins;			//The ID of the instruction
 	int* opTableEntry;	//Pointer to the entry in the opcode table that best matches this instruction
-	PARAMETER op[3];
+	PARAMETER parameters[3];
 	int bits;
+	int addressSize;	//are we using 16bit addressing (e.g. [bp+di]) or 32bit (e.g. [eax])
+	int dataSize;		//are we moving 16bit, or 32bits of data in the operation
 	char byteArray[MAX_LINE_BUFFER_SIZE];	//Holds the bytes of output
 	int byteArrayCount;						//How many bytes are in the byteArray
 } INSTRUCTION;
 
-//void doInstruction(FILECONTEXT* context);
-
 #define DO_INS_PHASE_COUNT 		0
 #define DO_INS_PHASE_ASSEMBLE	1
 
-
+void memOpExpression(PARAMETER* param);
 void doInstruction();
-
 int findInstruction(char* word);
 
 #endif /* INSTRUCTIONS_H_ */
