@@ -110,56 +110,49 @@ void doDeclareBytes(int size) {
 	startOfByte:
 
 	//a string
-	if (tokens[currTokenIndex][0]== '\'') {
+	if (tokens[currTokenIndex][0] == '\"') {
 		currTokenIndex++;
-		while (tokens[currTokenIndex][0] != '\'') {
+		int charIndex = 0;
+		while (tokens[currTokenIndex][charIndex] != '\0') {
 			if (tokens[currTokenIndex][0] == '\0') {
-				expect("'");
+				expect("\"");
 			}
 
 			if (instruction.byteArrayCount == 1024) {
 				expect("End of line");
 			}
 
-			instruction.byteArray[instruction.byteArrayCount++] = tokens[currTokenIndex][0];
-
+			instruction.byteArray[instruction.byteArrayCount++] = tokens[currTokenIndex][charIndex++];
 		}
-//eat '
+		currTokenIndex += 2;
 	} else {
+		//TODO: Perhaps a signed/unsigned prefix?
+		int value = expression();
 
-/*
 		switch (size) {
+
 			case 1:
-				if (context.currFile->numberTokenValue > 0xFF) {
+				if (value > 0xFF) {
 					expect("Number 0-255");
 				}
-				ins->byteArray[ins->byteArrayCount++] = context.currFile->numberTokenValue & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = value & 0xFF;
 				break;
 
 			case 2:
-				if (context.currFile->numberTokenValue > 0xFFFF) {
+				if (value > 0xFFFF) {
 					expect("Number 0-0xFFFF");
 				}
-				ins->byteArray[ins->byteArrayCount++] = context.currFile->numberTokenValue & 0xFF;
-				ins->byteArray[ins->byteArrayCount++] = (context.currFile->numberTokenValue >> 8) & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = value & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = (value >> 8) & 0xFF;
 				break;
 
 			case 4:
-				ins->byteArray[ins->byteArrayCount++] = context.currFile->numberTokenValue & 0xFF;
-				ins->byteArray[ins->byteArrayCount++] = (context.currFile->numberTokenValue >> 8) & 0xFF;
-				ins->byteArray[ins->byteArrayCount++] = (context.currFile->numberTokenValue >> 16) & 0xFF;
-				ins->byteArray[ins->byteArrayCount++] = (context.currFile->numberTokenValue >> 24) & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = value & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = (value >> 8) & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = (value >> 16) & 0xFF;
+				instruction.byteArray[instruction.byteArrayCount++] = (value >> 24) & 0xFF;
 				break;
 
-		}*/
+		}
 	}
-
-//	skipWhitespace();
-
-//	if (context.currFile->lookAhead == ',') {
-//		readChar(); //eat ,
-//		skipWhitespace();
-//
-//		goto startOfByte;
-//	}
 }

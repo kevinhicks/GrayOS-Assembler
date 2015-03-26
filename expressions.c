@@ -21,7 +21,7 @@ int expression() {
 	int t = 0;
 
 	//Unary -/+
-	if (tokens[currTokenIndex][0] == '-'){
+	if (tokens[currTokenIndex][0] == '-') {
 		currTokenIndex++;
 		t -= term();
 	} else {
@@ -82,7 +82,7 @@ int factor() {
 	}
 	//Label
 	else {
-		if(isRegister(tokens[currTokenIndex]) >= 0){
+		if (isRegister(tokens[currTokenIndex]) >= 0) {
 			printf("Register in expression!\n");
 			exit(0);
 		}
@@ -96,7 +96,7 @@ int factor() {
 				return 0;
 			}
 		} else {
-				expect("Factor");
+			expect("Factor");
 
 		}
 	}

@@ -125,6 +125,7 @@ void pass2() {
 void assembleLine() {
 	currTokenIndex = 0;
 	startOfComparison:
+	instruction.byteArrayCount = 0;
 
 	//read the first label/instruction/macro etc
 	if (findDirective(tokens[currTokenIndex], DRTV_PHASE1) != DRTV_NOT_FOUND) {
@@ -137,27 +138,38 @@ void assembleLine() {
 				context.outputPos = atol(tokens[currTokenIndex++]);
 
 				break;
-			case DRTV_BITS:
-				/*
-				 int bits = atol(tokens[currTokenIndex++]);
-				 if (bits != 16 && bits != 32) {
-				 expect("16 or 32 bits");
-				 }
+			case DRTV_BITS: {
+				int bits = atol(tokens[currTokenIndex++]);
+				if (bits != 16 && bits != 32) {
+					expect("16 or 32 bits");
+				}
 
-				 context.currFile->bitMode = bits;
-				 break;
-				 */
+				context.bitMode = bits;
+				break;
+			}
 			case DRTV_DB:
 				doDeclareBytes(1);
+				while (tokens[currTokenIndex++][0] == ',') {
+					doDeclareBytes(1);
+				}
 				break;
 			case DRTV_DW:
 				doDeclareBytes(2);
+				while (tokens[currTokenIndex++][0] == ',') {
+					doDeclareBytes(2);
+				}
 				break;
 			case DRTV_DD:
 				doDeclareBytes(4);
+				while (tokens[currTokenIndex++][0] == ',') {
+					doDeclareBytes(4);
+				}
 				break;
 			case DRTV_DQ:
 				doDeclareBytes(8);
+				while (tokens[currTokenIndex++][0] == ',') {
+					doDeclareBytes(8);
+				}
 				break;
 		}
 
@@ -238,7 +250,6 @@ int assembleBlock() {
 		if (forwardRefFound) {
 			forwardRefFound = FALSE;
 
-			printf("Context switch\n");
 			assembleBlock();
 
 			//move counters back
@@ -258,10 +269,15 @@ int assembleBlock() {
 			if (instruction.byteArrayCount == byteCount) {
 				return 0;
 			}
+
 			//otherwise keep assembling
 
 		} else {
 
+			tempInFilePos = ftell(context.currFile->file) - 1;
+			tempOutFilePos = ftell(context.outputFile->file);
+			tempLstFilePos = ftell(context.listingFile->file);
+			tempPreInsAddr = context.outputPos;
 			readLineIntoBuffer();
 		}
 	}

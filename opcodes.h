@@ -29,6 +29,10 @@
 #define OP_AH		0x2000
 #define OP_AX		0x4000
 #define OP_EAX		0x8000
+#define OP_SEGREG	0x10000
+#define OP_DISP8	0x20000
+#define OP_DISP16	0x40000
+#define OP_DISP32	0x80000
 
 #define OP_REG_MASK	(OP_REG | OP_REG8 | OP_REG16 | OP_REG32)
 #define OP_MEM_MASK	(OP_MEM | OP_MEM8 | OP_MEM16 | OP_MEM32)
@@ -99,6 +103,7 @@ int* findOpcodeByOperands();
 int countOpcodeBytes();
 
 int isRegister(char* regName);
+int isSegRegister(char* regName);
 
 void populateInstructionBytes();
 

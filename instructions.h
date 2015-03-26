@@ -136,6 +136,7 @@
 #define PARAM_MEM		0x01
 #define PARAM_REG		0x02
 #define PARAM_IMM		0x04
+#define PARAM_SEGREG	0x08
 
 //Flags describing Operands
 #define MEMOP_DISP8		0x01

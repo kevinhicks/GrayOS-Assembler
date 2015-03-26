@@ -167,10 +167,8 @@ void doInstruction() {
 
 	context.foundForwardReference = FALSE;
 
-	printf("Instruction: ");
 	if (instruction.ins != INS_NOT_FOUND) {
-
-		printf("%s ", tokens[currTokenIndex++]);
+		currTokenIndex++;
 
 		int param = 0;
 		//parse up to 3 params
@@ -225,7 +223,13 @@ void doInstruction() {
 			//REG
 			int r = isRegister(tokens[currTokenIndex]);
 			if (r >= 0) {
-				instruction.parameters[param].opType = PARAM_REG;
+				//Segment register?
+				int s = isSegRegister(tokens[currTokenIndex]);
+				if (s >= 0) {
+					instruction.parameters[param].opType = PARAM_SEGREG;
+				} else {
+					instruction.parameters[param].opType = PARAM_REG;
+				}
 				instruction.parameters[param].reg = r;
 
 				currTokenIndex++;
@@ -234,12 +238,11 @@ void doInstruction() {
 			}
 
 			//Immediate
-			//if (isdigit(tokens[currTokenIndex][0])) {
-				instruction.parameters[param].opType = PARAM_IMM;
-				instruction.parameters[param].numberValue = expression();
+			instruction.parameters[param].opType = PARAM_IMM;
+			instruction.parameters[param].numberValue = expression();
 
-				currTokenIndex++;
-				continue;
+			currTokenIndex++;
+			continue;
 			//}
 
 			printf("Unknown operand\n");

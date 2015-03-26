@@ -71,8 +71,8 @@ void tokenizeString() {
 	while (context.currFile->lineBuffer[inputIndex] != '\0')
 	{
 		tokenCharIndex = 0;
+		//Skip all whitespace first
 		if (iswspace(context.currFile->lineBuffer[inputIndex])) {
-			//Skip all whitespace
 			while (iswspace(context.currFile->lineBuffer[inputIndex])) {
 				inputIndex++;
 			}
@@ -84,13 +84,32 @@ void tokenizeString() {
 			while (isalnum(context.currFile->lineBuffer[inputIndex])) {
 				tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
 			}
-		} else if (isxdigit(context.currFile->lineBuffer[inputIndex])) {
+		}
+		//Number?
+		else if (isxdigit(context.currFile->lineBuffer[inputIndex])) {
 			//Multi-char number token
 			while (isalnum(context.currFile->lineBuffer[inputIndex])) {
 				tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
 			}
-		} else {
-			//Single-char token
+		}
+		//String?
+		else if(context.currFile->lineBuffer[inputIndex] == '"') {
+			tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
+			tokens[tokenIndex][tokenCharIndex++] = '\0';
+			tokenIndex++;
+			tokenCharIndex = 0;
+
+			while(context.currFile->lineBuffer[inputIndex] != '"') {
+				tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
+			}
+			tokens[tokenIndex++][tokenCharIndex++] = '\0';
+
+			tokenCharIndex = 0;
+			tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
+
+		}
+		//Single-char token?
+		else {
 			tokens[tokenIndex][tokenCharIndex++] = context.currFile->lineBuffer[inputIndex++];
 		}
 
